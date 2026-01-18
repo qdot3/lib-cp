@@ -1,0 +1,11 @@
+[package]
+name = "disjoint_sparse_table"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+ops = { path = "../../math/ops" }
+
+[dev-dependencies]
+rand = { workspace = true }

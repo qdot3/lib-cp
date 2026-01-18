@@ -1,0 +1,3 @@
+[alias]
+# cargo equipを利用している
+equip-atcoder = "equip --bin playground --exclude proconio itertools rand rustc-hash num fixedbitset thiserror --remove comments docs --minify libs --mod-path crate::npk_cp_lib"
