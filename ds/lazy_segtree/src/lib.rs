@@ -294,16 +294,19 @@ where
 
         let size = lazy_propagation.is_size_dependent().then_some({
             let mut size = Vec::with_capacity(n << 1);
-            let uninit = size.spare_capacity_mut();
-            for i in n..n << 1 {
-                uninit[i].write(1);
-            }
-            for i in (0..n).rev() {
-                // SAFETY: 直前までに初期化している
-                uninit[i].write(
-                    unsafe { uninit[i << 1].assume_init() }
-                        + unsafe { uninit[(i << 1) | 1].assume_init() },
-                );
+            {
+                let uninit = size.spare_capacity_mut();
+                for i in n..n << 1 {
+                    uninit[i].write(1);
+                }
+                for i in (1..n).rev() {
+                    // SAFETY: 直前までに初期化している
+                    uninit[i].write(
+                        unsafe { uninit[i << 1].assume_init() }
+                            + unsafe { uninit[(i << 1) | 1].assume_init() },
+                    );
+                }
+                uninit[0].write(0);
             }
             // SAFETY: [0, 2n) を初期化した
             unsafe { size.set_len(n << 1) };
