@@ -46,15 +46,39 @@ impl<T1: SemiGroup, T2: SemiGroup> SemiGroup for (T1, T2) {
     }
 }
 
+impl<T1: SemiGroup, T2: SemiGroup, T3: SemiGroup> SemiGroup for (T1, T2, T3) {
+    type Set = (T1::Set, T2::Set, T3::Set);
+
+    fn op(lhs: Self::Set, rhs: Self::Set) -> Self::Set {
+        (
+            T1::op(lhs.0, rhs.0),
+            T2::op(lhs.1, rhs.1),
+            T3::op(lhs.2, rhs.2),
+        )
+    }
+}
+
 impl<T1: Identity, T2: Identity> Identity for (T1, T2) {
     fn id() -> Self::Set {
         (T1::id(), T2::id())
     }
 }
 
+impl<T1: Identity, T2: Identity, T3: Identity> Identity for (T1, T2, T3) {
+    fn id() -> Self::Set {
+        (T1::id(), T2::id(), T3::id())
+    }
+}
+
 impl<T1: Inverse, T2: Inverse> Inverse for (T1, T2) {
     fn inv(x: Self::Set) -> Self::Set {
         (T1::inv(x.0), T2::inv(x.1))
+    }
+}
+
+impl<T1: Inverse, T2: Inverse, T3: Inverse> Inverse for (T1, T2, T3) {
+    fn inv(x: Self::Set) -> Self::Set {
+        (T1::inv(x.0), T2::inv(x.1), T3::inv(x.2))
     }
 }
 
@@ -97,7 +121,7 @@ pub mod ops {
         ops::{Add, Neg},
     };
 
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     pub struct Min<T>(PhantomData<T>);
 
     impl<T: Ord> SemiGroup for Min<T> {
@@ -111,7 +135,7 @@ pub mod ops {
     impl<T: Ord> marker::Idempotent for Min<T> {}
     impl<T: Ord> marker::Commutative for Min<T> {}
 
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     pub struct Max<T>(PhantomData<T>);
 
     impl<T: Ord> SemiGroup for Max<T> {
@@ -143,7 +167,7 @@ pub mod ops {
     primitive_min_max_identity_impl!( u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize );
 
     /// `+`演算が定義された集合
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     pub struct Additive<T>(PhantomData<T>);
 
     impl<T> SemiGroup for Additive<T>
