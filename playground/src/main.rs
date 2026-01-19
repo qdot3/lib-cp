@@ -1,21 +1,16 @@
-use std::collections::VecDeque;
-
-use proconio::{input, marker::Bytes};
+use fps::FPS;
+use itertools::Itertools;
+use mint::Mint;
+use proconio::input;
 
 fn main() {
-    input! { n: usize, a: u64, b: u64, s: Bytes, }
+    const MOD: u32 = 998_244_353;
+    input! { n: usize, m: usize, a: [u32; n], b: [u32; m], }
 
-    let mut min_cost = !0;
-    let mut s = VecDeque::from(s);
-    for i in 0..n {
-        let mut cost = i as u64 * a;
-        for (l, r) in (0..n).zip((0..n).rev()).take(n / 2) {
-            if s[l] != s[r] {
-                cost += b
-            }
-        }
-        min_cost = min_cost.min(cost);
-        s.rotate_left(1);
-    }
-    println!("{}", min_cost)
+    let f = FPS::<Mint<MOD>>::from_iter(a.into_iter().map(|v| Mint::new(v)));
+    let g = FPS::<Mint<MOD>>::from_iter(b.into_iter().map(|v| Mint::new(v)));
+
+    let fg = f * g;
+
+    println!("{}", fg.coefficients(n + m - 1).iter().join(" "))
 }

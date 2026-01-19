@@ -1,13 +1,14 @@
 use ops::{marker::Commutative, Monoid, SemiGroup};
 
 /// 可換な半群の値の列に対して、一点更新・累積クエリを高速に計算するデータ構造。
+#[derive(Debug, Clone)]
 pub struct FenwickTree<T: SemiGroup + Commutative> {
     lefts: Box<[T::Set]>,
 }
 
 impl<T> FenwickTree<T>
 where
-    T: SemiGroup + Commutative,
+    T: Monoid + Commutative,
     T::Set: Copy,
 {
     /// 初めの`n`要素について累積計算した結果を返す。
@@ -16,10 +17,7 @@ where
     ///
     /// *Θ*(log *N*)
     pub fn prefix_query(&self, mut n: usize) -> T::Set {
-        let mut res = self.lefts[n];
-        n += 1;
-        n -= 1 << n.trailing_zeros();
-
+        let mut res = T::id();
         while n > 0 {
             res = T::op(self.lefts[n - 1], res);
             n -= 1 << n.trailing_zeros();

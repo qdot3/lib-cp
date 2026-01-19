@@ -211,6 +211,7 @@ dependencies = [
  "fenwick",
  "fixedbitset",
  "floor_sum",
+ "fps",
  "itertools",
  "lazy_segtree",
  "lca",

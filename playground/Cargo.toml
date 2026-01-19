@@ -37,5 +37,7 @@ ops = { path = "../math/ops" }
 mint = { path = "../math/mint" }
 floor_sum = { path = "../math/floor_sum" }
 
+fps = { path = "../fps/fps" }
+
 rolling_hash = { path = "../string/rolling_hash" }
 z_algorithm = { path = "../string/z_algorithm" }
