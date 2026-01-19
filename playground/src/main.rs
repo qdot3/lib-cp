@@ -8,7 +8,7 @@ fn main() {
     input! { n: usize, m: usize, a: [u32; n], b: [u32; m], }
 
     let f = FPS::<Mint<MOD>>::from_iter(a.into_iter().map(|v| Mint::new(v)));
-    let g = FPS::<Mint<MOD>>::from_iter(b.into_iter().map(|v| Mint::new(v)));
+    let g = FPS::from_iter(b.into_iter().map(|v| Mint::new(v)));
 
     let fg = f * g;
 

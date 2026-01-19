@@ -2,13 +2,16 @@ use std::ops::Mul;
 
 use mint::Mint;
 
+/// 形式的冪級数
+///
+/// 詳細はノートを参照すること
 pub struct FPS<T>(
     /// f(x) = Σ_i c[i] x^i
     Vec<T>,
 );
 
 impl<T> FPS<T> {
-    pub const fn degree(&self) -> usize {
+    const fn degree(&self) -> usize {
         self.0.len()
     }
 
@@ -41,6 +44,60 @@ impl<const P: u32> FPS<Mint<P>>
 where
     Mint<P>: NTTFriendlyPrime,
 {
+    const RATE: [Mint<P>; 32] = {
+        // P = a * 2^n + 1
+        let n = (P - 1).trailing_zeros() as usize;
+        let a = (P - 1) >> n;
+
+        let mut rate = [Mint::new(0); 32];
+        let mut w = Mint::new(Mint::<P>::PRIMITIVE_ROOT).pow(a);
+        let mut iw = w.pow(P - 2);
+
+        let mut i = 2;
+        while i <= n {
+            rate[n - i] = w;
+
+            let mut j = n - i;
+            while j + 2 < n {
+                j += 1;
+                rate[j].const_mul_assign(iw);
+            }
+
+            w = w.pow(2);
+            iw = iw.pow(2);
+            i += 1
+        }
+
+        rate
+    };
+
+    const INV_RATE: [Mint<P>; 32] = {
+        // P = a * 2^n + 1
+        let n = (P - 1).trailing_zeros() as usize;
+        let a = (P - 1) >> n;
+
+        let mut rate = [Mint::new(0); 32];
+        let mut iw = Mint::new(Mint::<P>::PRIMITIVE_ROOT).pow(a);
+        let mut w = iw.pow(P - 2);
+
+        let mut i = 2;
+        while i <= n {
+            rate[n - i] = w;
+
+            let mut j = n - i;
+            while j + 2 < n {
+                j += 1;
+                rate[j].const_mul_assign(iw);
+            }
+
+            w = w.pow(2);
+            iw = iw.pow(2);
+            i += 1
+        }
+
+        rate
+    };
+
     /// 正順の入力を受け取り、ビット反転順序で返す。
     /// 規格化しない。
     ///
@@ -100,60 +157,6 @@ where
 
         self.0
     }
-
-    const RATE: [Mint<P>; 32] = {
-        // P = a * 2^n + 1
-        let n = (P - 1).trailing_zeros() as usize;
-        let a = (P - 1) >> n;
-
-        let mut rate = [Mint::new(0); 32];
-        let mut w = Mint::new(Mint::<P>::PRIMITIVE_ROOT).pow(a);
-        let mut iw = w.pow(P - 2);
-
-        let mut i = 2;
-        while i <= n {
-            rate[n - i] = w;
-
-            let mut j = n - i;
-            while j + 2 < n {
-                j += 1;
-                rate[j].const_mul_assign(iw);
-            }
-
-            w = w.pow(2);
-            iw = iw.pow(2);
-            i += 1
-        }
-
-        rate
-    };
-
-    const INV_RATE: [Mint<P>; 32] = {
-        // P = a * 2^n + 1
-        let n = (P - 1).trailing_zeros() as usize;
-        let a = (P - 1) >> n;
-
-        let mut rate = [Mint::new(0); 32];
-        let mut iw = Mint::new(Mint::<P>::PRIMITIVE_ROOT).pow(a);
-        let mut w = iw.pow(P - 2);
-
-        let mut i = 2;
-        while i <= n {
-            rate[n - i] = w;
-
-            let mut j = n - i;
-            while j + 2 < n {
-                j += 1;
-                rate[j].const_mul_assign(iw);
-            }
-
-            w = w.pow(2);
-            iw = iw.pow(2);
-            i += 1
-        }
-
-        rate
-    };
 }
 
 impl<const P: u32> Mul for FPS<Mint<P>>
