@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use ops::{marker::Commutative, Monoid, SemiGroup};
 
 /// 可換な半群の値の列に対して、一点更新・累積クエリを高速に計算するデータ構造。
@@ -11,7 +13,18 @@ where
     T: Monoid + Commutative,
     T::Set: Copy,
 {
-    /// 初めの`n`要素について累積計算した結果を返す。
+    /// 単位元で初期化する。
+    ///
+    /// # Time Complexity
+    ///
+    /// *O*(*N*)
+    pub fn new(n: usize) -> Self {
+        Self {
+            lefts: vec![T::id(); n].into_boxed_slice(),
+        }
+    }
+
+    /// `0..n`番目の要素について累積計算した結果を返す。
     ///
     /// # Time Complexity
     ///
@@ -27,29 +40,70 @@ where
     }
 
     /// `i`番目の要素を差分計算する。
-    /// つまり、`T::op(self, diff)`で更新する。
+    /// つまり、`T::op(self, additional)`で更新する。
     ///
     /// # Time Complexity
     ///
     /// *Θ*(log *N*)
-    pub fn point_update(&mut self, mut i: usize, diff: T::Set) {
+    pub fn point_update(&mut self, mut i: usize, additional: T::Set) {
         i += 1;
         while i <= self.lefts.len() {
-            self.lefts[i - 1] = T::op(self.lefts[i - 1], diff);
+            self.lefts[i - 1] = T::op(self.lefts[i - 1], additional);
             i += 1 << i.trailing_zeros()
         }
     }
-}
 
-impl<T> FenwickTree<T>
-where
-    T: Monoid + Commutative,
-    T::Set: Copy,
-{
-    pub fn new(n: usize) -> Self {
-        Self {
-            lefts: vec![T::id(); n].into_boxed_slice(),
+    /// 条件`pred`を満たす最大の累積値と合成された要素数を返す。
+    ///
+    /// より形式的には、`i`番目までの累積値`s_i`について、下記を満たす`j`を返す。
+    /// ```txt
+    /// pred(s_i) = true      for all i < j
+    /// pred(s_i) = false     for all i >= j
+    /// ```
+    ///
+    /// # Time Complexity
+    ///
+    /// *Θ*(log *N*)
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use ops::ops::Additive;
+    /// use fenwick::FenwickTree;
+    ///
+    /// let prefix_sum = FenwickTree::<Additive<u32>>::from_iter(0..10);
+    ///
+    /// let a = 0 + 1 + 2 + 3 + 4;
+    /// let (i, sum) = prefix_sum.partition_point(|v| *v <= a);
+    /// assert_eq!(i, 5);
+    /// assert_eq!(sum, 0 + 1 + 2 + 3 + 4);
+    ///
+    /// let (i, sum) = prefix_sum.partition_point(|v| *v < 1_000_000);
+    /// assert_eq!(i, 10);
+    /// assert_eq!(sum, 45);
+    /// ```
+    pub fn partition_point<P>(&self, mut pred: P) -> (usize, T::Set)
+    where
+        P: FnMut(&T::Set) -> bool,
+        T::Set: Debug,
+    {
+        let mut i = 0;
+        let mut prefix = T::id();
+        // ブロックサイズを小さくしていく
+        let mut additional = 1 << self.lefts.len().ilog2();
+        while additional > 0 {
+            let temp = T::op(prefix, self.lefts[i + additional - 1]);
+            if pred(&temp) {
+                prefix = temp;
+                i += additional
+            }
+            while {
+                additional >>= 1;
+                i + additional > self.lefts.len()
+            } {}
         }
+
+        (i, prefix)
     }
 }
 
@@ -60,19 +114,32 @@ where
 {
     /// # Time Complexity
     ///
-    /// *Θ*(*N* log *N*)
+    /// *Θ*(*N*)
     fn from(mut value: Vec<T::Set>) -> Self {
-        for i in (0..value.len()).rev() {
-            let mut j = i + 1;
-            j += 1 << j.trailing_zeros();
-            while j <= value.len() {
-                value[i] = T::op(value[i], value[j - 1]);
-                j += 1 << j.trailing_zeros()
+        // 正順に親を更新していく
+        for i in 0..value.len() {
+            let mut p = i + 1;
+            p += 1 << p.trailing_zeros();
+            if p <= value.len() {
+                value[p - 1] = T::op(value[p - 1], value[i]);
             }
         }
 
         Self {
             lefts: value.into_boxed_slice(),
         }
+    }
+}
+
+impl<T> FromIterator<T::Set> for FenwickTree<T>
+where
+    T: SemiGroup + Commutative,
+    T::Set: Copy,
+{
+    /// # Time Complexity
+    ///
+    /// *Θ*(*N*)
+    fn from_iter<I: IntoIterator<Item = T::Set>>(iter: I) -> Self {
+        Self::from(Vec::from_iter(iter))
     }
 }
