@@ -2,9 +2,6 @@ use std::ops::Mul;
 
 use mint::Mint;
 
-/// 形式的冪級数
-///
-/// 詳細はノートを参照すること
 pub struct FPS<T>(
     /// f(x) = Σ_i c[i] x^i
     Vec<T>,
@@ -169,7 +166,7 @@ where
     ///
     /// *O*(*N* log *N*)
     fn mul(self, rhs: Self) -> Self::Output {
-        let deg = self.degree() + rhs.degree();
+        let deg = self.degree() + rhs.degree() - 1;
 
         let mut a = self.ntt_t(deg, false);
         let b = rhs.ntt_t(deg, false);
@@ -178,8 +175,8 @@ where
             *a *= b
         }
 
-        let coefficients = Self::from(a).ntt_f(deg, true);
-        Self::from(coefficients)
+        let c = Self::from(a).ntt_f(deg, true);
+        Self::from(c)
     }
 }
 
