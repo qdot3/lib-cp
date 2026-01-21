@@ -65,16 +65,20 @@ pub struct UndirectedCSR<Idx: Index, W> {
     partition: Box<[usize]>,
 }
 
-impl<Idx, W, I> From<(Idx, I)> for UndirectedCSR<Idx, W>
+impl<Idx, W> UndirectedCSR<Idx, W>
 where
     Idx: Index,
     W: Clone,
-    I: IntoIterator<Item: Into<Edge<Idx, W>>>,
 {
+    /// 無向辺からグラフをつくる
+    ///
     /// # Time Complexity
     ///
     /// *Θ*(*N*)
-    fn from((max_index, edges): (Idx, I)) -> Self {
+    pub fn new<I>(edges: I, max_index: Idx) -> Self
+    where
+        I: IntoIterator<Item: Into<Edge<Idx, W>>>,
+    {
         let edges: Vec<Edge<Idx, W>> = edges.into_iter().map(|e| e.into()).collect();
         let mut degree = vec![0; max_index.into_usize() + 2];
         for e in edges.iter() {
@@ -119,15 +123,19 @@ pub struct DirectedCSR<Idx: Index, W> {
     partition: Box<[usize]>,
 }
 
-impl<Idx, W, I> From<(Idx, I)> for DirectedCSR<Idx, W>
+impl<Idx, W> DirectedCSR<Idx, W>
 where
     Idx: Index,
-    I: IntoIterator<Item: Into<Edge<Idx, W>>>,
 {
+    /// 有向辺からグラフをつくる。
+    /// 
     /// # Time Complexity
     ///
     /// *Θ*(*N*)
-    fn from((max_index, edges): (Idx, I)) -> Self {
+    pub fn new<I>(edges: I, max_index: Idx) -> Self
+    where
+        I: IntoIterator<Item: Into<Edge<Idx, W>>>,
+    {
         let edges: Vec<Edge<Idx, W>> = edges.into_iter().map(|e| e.into()).collect();
         let mut degree = vec![0; max_index.into_usize() + 2];
         for e in edges.iter() {

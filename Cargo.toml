@@ -21,6 +21,7 @@ members = [
     "math/mint",
     "math/ops",
     "playground",
+    "small/sorted_array",
     "string/rolling_hash",
     "string/z_algorithm",
 ]

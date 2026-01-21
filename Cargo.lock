@@ -341,6 +341,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "sorted_array"
+version = "0.1.0"
+
+[[package]]
 name = "sparse_table"
 version = "0.1.0"
 dependencies = [
