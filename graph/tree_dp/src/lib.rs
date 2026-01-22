@@ -28,7 +28,7 @@ where
     ///
     /// 1. 子ノードまでの部分木の結果に`map_child`を作用させる
     /// 2. `M::op`で修正した結果をまとめる
-    /// 3. まとめた結果に`map_parent`を作用させる
+    /// 3. まとめた結果に`map_parent`を作用させ、値を更新する
     pub fn new(map_child: FC, map_parent: FP) -> Self {
         Self {
             map_child,

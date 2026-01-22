@@ -33,6 +33,7 @@ macro_rules! index_impl {
 // メモリの節約が目的なので、u128 は不要
 index_impl!( u8 u16 u32 usize );
 
+/// 有向辺
 pub struct Edge<Idx: Index, W> {
     pub source: Idx,
     pub target: Idx,
@@ -58,6 +59,12 @@ impl<Idx: Index, W> From<(Idx, Idx, W)> for Edge<Idx, W> {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Directed;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Undirected;
 
 #[derive(Debug, Clone)]
 pub struct UndirectedCSR<Idx: Index, W> {
@@ -128,15 +135,15 @@ where
     Idx: Index,
 {
     /// 有向辺からグラフをつくる。
-    /// 
+    ///
     /// # Time Complexity
     ///
     /// *Θ*(*N*)
-    pub fn new<I>(edges: I, max_index: Idx) -> Self
+    pub fn new<I>(directed_edges: I, max_index: Idx) -> Self
     where
         I: IntoIterator<Item: Into<Edge<Idx, W>>>,
     {
-        let edges: Vec<Edge<Idx, W>> = edges.into_iter().map(|e| e.into()).collect();
+        let edges: Vec<Edge<Idx, W>> = directed_edges.into_iter().map(|e| e.into()).collect();
         let mut degree = vec![0; max_index.into_usize() + 2];
         for e in edges.iter() {
             degree[e.source.into_usize()] += 1;

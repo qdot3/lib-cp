@@ -17,27 +17,27 @@ fixedbitset = "0.5.7"
 thiserror = "2.0.16"
 
 # workspace members
-convex_hull = { path = "../geo/convex_hull" }
+convex_hull = { workspace = true }
 
-bipartite = { path = "../graph/bipartite" }
-csr = { path = "../graph/csr" }
-lca = { path = "../graph/lca" }
-scc = { path = "../graph/scc" }
-tree_dp = { path = "../graph/tree_dp" }
+bipartite = { workspace = true }
+csr = { workspace = true }
+lca = { workspace = true }
+scc = { workspace = true }
+tree_dp = { workspace = true }
 
-disjoint_sparse_table = { path = "../ds/disjoint_sparse_table" }
-sparse_table = { path = "../ds/sparse_table" }
-rmq = { path = "../ds/rmq" }
+disjoint_sparse_table = { workspace = true }
+sparse_table = { workspace = true }
+rmq = { workspace = true }
 
-fenwick = { path = "../ds/fenwick" }
-lazy_segtree = { path = "../ds/lazy_segtree" }
-union_find = { path = "../ds/union_find" }
+fenwick = { workspace = true }
+lazy_segtree = { workspace = true }
+union_find = { workspace = true }
 
-ops = { path = "../math/ops" }
-mint = { path = "../math/mint" }
-floor_sum = { path = "../math/floor_sum" }
+ops = { workspace = true }
+mint = { workspace = true }
+floor_sum = { workspace = true }
 
-fps = { path = "../fps/fps" }
+fps = { workspace = true }
 
-rolling_hash = { path = "../string/rolling_hash" }
-z_algorithm = { path = "../string/z_algorithm" }
+rolling_hash = { workspace = true }
+z_algorithm = { workspace = true }

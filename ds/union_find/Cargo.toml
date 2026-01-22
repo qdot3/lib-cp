@@ -5,4 +5,4 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-ops = { path = "../../math/ops" }
+ops = { workspace = true }

@@ -6,7 +6,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
-csr = { path = "../csr" }
-ops = { path = "../../math/ops" }
+csr = { workspace = true }
+ops = { workspace = true }
 thiserror = { workspace = true }
 fixedbitset = { workspace = true }

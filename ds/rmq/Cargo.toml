@@ -5,8 +5,8 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-ops = { path = "../../math/ops" }
-sparse_table = { path = "../sparse_table" }
+ops = { workspace = true }
+sparse_table = { workspace = true }
 rustc-hash = { workspace = true }
 
 [dev-dependencies]

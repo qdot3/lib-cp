@@ -6,4 +6,4 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
-csr = { path = "../csr" }
+csr = { workspace = true }

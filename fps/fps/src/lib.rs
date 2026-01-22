@@ -137,9 +137,11 @@ where
         let mut w = 1;
         while w < self.0.len() {
             let mut r = Mint::new(1);
+            // TODO: r = 1 の場合を特別扱いする。
             for (i, pair) in self.0.chunks_exact_mut(w << 1).enumerate() {
                 let (prefix, suffix) = pair.split_at_mut(w);
                 for i in 0..w {
+                    // TODO: 並列化する
                     (prefix[i], suffix[i]) = (prefix[i] + suffix[i], (prefix[i] - suffix[i]) * r)
                 }
                 r = if inverse {
