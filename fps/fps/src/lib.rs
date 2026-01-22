@@ -8,6 +8,7 @@ pub struct FPS<T>(
 );
 
 impl<T> FPS<T> {
+    // TODO: capacity と degree を区別したい。iter.size_hint() ?
     const fn degree(&self) -> usize {
         self.0.len()
     }
@@ -41,6 +42,7 @@ impl<const P: u32> FPS<Mint<P>>
 where
     Mint<P>: NTTFriendlyPrime,
 {
+    /// NTTにおける回転因子の差分
     const RATE: [Mint<P>; 32] = {
         // P = a * 2^n + 1
         let n = (P - 1).trailing_zeros() as usize;
@@ -68,6 +70,7 @@ where
         rate
     };
 
+    /// 逆NTTにおける回転因子の差分
     const INV_RATE: [Mint<P>; 32] = {
         // P = a * 2^n + 1
         let n = (P - 1).trailing_zeros() as usize;

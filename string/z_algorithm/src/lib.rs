@@ -12,7 +12,7 @@ pub fn z_algorithm<T: Eq>(str: &[T]) -> Vec<usize> {
     // match_r は探索済みでなければならないので、
     z.push(str.len());
     for i in 1..str.len() {
-        // 計算済みの結果を再利用
+        // 計算済みの結果を再利用。共通接頭辞の下界が決まる。
         z.push(if i < match_r.end {
             debug_assert!(match_r.contains(&i));
             z[i - match_r.start].min(match_r.end - i)
