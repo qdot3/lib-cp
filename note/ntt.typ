@@ -330,7 +330,7 @@ $a_i$ と $a_(i+n/2)$ が隣接しているので、ビット反転順序の入�
   ```
 ]<algo:ntt-dif>
 
-== 最適化（その２）
+== 追加の最適化
 
 @algo:ntt-dit-v3 と @algo:ntt-dif を組み合わせることで、関数の積を求めるアルゴリズムを最適化できました。
 追加の最適化手法をいくつか述べます。
@@ -355,7 +355,6 @@ $n$ が2冪のときの数論変換を $Theta(n log n)$ で計算するアルゴ
 また、SIMD命令を活用してさらに高速化することが分かりました。
 
 #inline-note[
-  + ゼロ埋めを最適化すれば、メモリ使用量を削減できる。
   + べき乗をとるとMLEするかも？
 ]
 
@@ -368,5 +367,20 @@ $n$ が2冪のときの数論変換を $Theta(n log n)$ で計算するアルゴ
 + #link(
     "https://www.math.sci.hokudai.ac.jp/~wakate/mcyr/2025/pdf/Taiga%20Kanetaka.pdf",
   )[一般の基数の数論変換アルゴリズムの比較]
+
+= Prime Factor 型アルゴリズム <chap:prime-factor-ntt>
+
+Cooley-Tukey型NTTでは２冪サイズになるまでゼロ埋めする必要がありました。
+このとき、配列のサイズは平均で 1.5 倍になります。
+@chap:prime-factor-ntt では、Prime Factor 型アルゴリズムを紹介します。
+これとCooley-Tukey型アルゴリズムを組み合わせることで、ゼロ埋めする要素数を高々 $sqrt(n)$ 個に抑えることができることを示します。
+
+== アルゴリズム
+== ゼロ埋めの最適化
+==  Sparse NTT
+
+#inline-note[
+  最後のFFTはゼロが多い
+]
 
 = 形式的冪級数

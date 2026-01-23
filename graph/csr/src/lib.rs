@@ -10,10 +10,12 @@ pub trait Index: Debug + Copy + Eq + Ord {
 macro_rules! index_impl {
     ($( $t:ty )+) => {$(
         impl Index for $t {
+            #[inline]
             fn into_usize(self) -> usize {
                 self as usize
             }
 
+            #[inline]
             fn from_usize(n: usize) -> Self {
                 n as $t
             }
@@ -77,7 +79,7 @@ where
     Idx: Index,
     W: Clone,
 {
-    /// 無向辺からグラフをつくる
+    /// 無向辺からグラフをつくる。
     ///
     /// # Time Complexity
     ///
@@ -139,11 +141,11 @@ where
     /// # Time Complexity
     ///
     /// *Θ*(*N*)
-    pub fn new<I>(directed_edges: I, max_index: Idx) -> Self
+    pub fn new<I>(edges: I, max_index: Idx) -> Self
     where
         I: IntoIterator<Item: Into<Edge<Idx, W>>>,
     {
-        let edges: Vec<Edge<Idx, W>> = directed_edges.into_iter().map(|e| e.into()).collect();
+        let edges: Vec<Edge<Idx, W>> = edges.into_iter().map(|e| e.into()).collect();
         let mut degree = vec![0; max_index.into_usize() + 2];
         for e in edges.iter() {
             degree[e.source.into_usize()] += 1;

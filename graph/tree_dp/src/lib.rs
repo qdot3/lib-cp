@@ -164,7 +164,7 @@ where
         let mut dfs = Vec::with_capacity(n);
         dfs.push(root);
         let mut dfs_cnt = 0;
-        // 前半は行きがけ、後半は帰りがけ。帰りがけに remove すする戦略はループがあると破綻する。
+        // 前半は行きがけ、後半は帰りがけ。帰りがけに remove する戦略はループがあると破綻する。
         let mut visited = FixedBitSet::with_capacity(2 * n);
         while let Some(src) = dfs.last().copied() {
             if !visited[src.into_usize()] {
