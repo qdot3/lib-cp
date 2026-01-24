@@ -27,10 +27,15 @@ name = "convex_hull"
 version = "0.1.0"
 dependencies = [
  "num",
+ "point",
 ]
 
 [[package]]
 name = "csr"
+version = "0.1.0"
+
+[[package]]
+name = "csr2"
 version = "0.1.0"
 
 [[package]]
@@ -218,6 +223,7 @@ dependencies = [
  "mint",
  "num",
  "ops",
+ "point",
  "proconio",
  "rand",
  "rmq",
@@ -229,6 +235,13 @@ dependencies = [
  "tree_dp",
  "union_find",
  "z_algorithm",
+]
+
+[[package]]
+name = "point"
+version = "0.1.0"
+dependencies = [
+ "num",
 ]
 
 [[package]]

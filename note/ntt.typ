@@ -370,17 +370,9 @@ $n$ が2冪のときの数論変換を $Theta(n log n)$ で計算するアルゴ
 
 = Prime Factor 型アルゴリズム <chap:prime-factor-ntt>
 
-Cooley-Tukey型NTTでは２冪サイズになるまでゼロ埋めする必要がありました。
-このとき、配列のサイズは平均で 1.5 倍になります。
+Cooley-Tukey型NTTでは配列が２冪サイズになるまでゼロ埋めする必要がありました。
+このとき、配列のサイズは平均で 1.5 倍になってしまいます。
 @chap:prime-factor-ntt では、Prime Factor 型アルゴリズムを紹介します。
-これとCooley-Tukey型アルゴリズムを組み合わせることで、ゼロ埋めする要素数を高々 $sqrt(n)$ 個に抑えることができることを示します。
 
-== アルゴリズム
-== ゼロ埋めの最適化
-==  Sparse NTT
-
-#inline-note[
-  最後のFFTはゼロが多い
-]
 
 = 形式的冪級数

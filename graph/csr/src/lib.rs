@@ -68,6 +68,22 @@ pub struct Directed;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Undirected;
 
+pub trait EdgeTy {
+    fn is_directed() -> bool;
+}
+
+impl EdgeTy for Directed {
+    fn is_directed() -> bool {
+        true
+    }
+}
+
+impl EdgeTy for Undirected {
+    fn is_directed() -> bool {
+        false
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct UndirectedCSR<Idx: Index, W> {
     target: Box<[(Idx, W)]>,

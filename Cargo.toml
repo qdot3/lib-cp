@@ -4,6 +4,7 @@
 resolver = "2"
 
 members = [
+    # cargo-equip (で利用されている cargo-metadata) で必要
     "ds/disjoint_sparse_table",
     "ds/fenwick",
     "ds/lazy_segtree",
@@ -12,8 +13,10 @@ members = [
     "ds/union_find",
     "fps/fps",
     "geo/convex_hull",
+    "geo/point",
     "graph/bipartite",
     "graph/csr",
+    "graph/csr2",
     "graph/lca",
     "graph/scc",
     "graph/tree_dp",
@@ -32,8 +35,8 @@ edition = "2021"
 rust-version = "1.89.0"
 authors = ["qdot3"]
 
-# AtCoder 2025/11 以降に利用できるクレート
 [workspace.dependencies]
+# AtCoder 2025/11 以降に利用できるクレート
 rustc-hash = "2.1.1"
 itertools = "0.14.0"
 rand = "0.9.2"
@@ -53,9 +56,11 @@ union_find = { path = "./ds/union_find" }
 fps = { path = "./fps/fps" }
 
 convex_hull = { path = "./geo/convex_hull" }
+point = { path = "./geo/point" }
 
 bipartite = { path = "./graph/bipartite" }
 csr = { path = "./graph/csr" }
+# csr2 = { path = "./graph/csr2" } UC
 lca = { path = "./graph/lca" }
 scc = { path = "./graph/scc" }
 tree_dp = { path = "./graph/tree_dp" }
@@ -65,5 +70,6 @@ mint = { path = "./math/mint" }
 ops = { path = "./math/ops" }
 
 sorted_array = { path = "./small/sorted_array" }
+
 rolling_hash = { path = "./string/rolling_hash" }
 z_algorithm = { path = "./string/z_algorithm" }

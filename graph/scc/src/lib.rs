@@ -1,11 +1,11 @@
-use csr::{Index, CSR};
+use csr::{DirectedCSR, Index, CSR};
 
 /// 有向グラフの強連結成分（SCC）を求める
 ///
 /// # Time Complexity
 ///
 /// *O*(*V* + *E*)
-pub fn tarjan_scc<Idx, W>(csr: &impl CSR<Idx, W>) -> SCC<Idx>
+pub fn tarjan_scc<Idx, W>(csr: &DirectedCSR<Idx, W>) -> SCC<Idx>
 where
     Idx: Index,
 {

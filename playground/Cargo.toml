@@ -18,6 +18,7 @@ thiserror = "2.0.16"
 
 # workspace members
 convex_hull = { workspace = true }
+point = { workspace = true }
 
 bipartite = { workspace = true }
 csr = { workspace = true }
