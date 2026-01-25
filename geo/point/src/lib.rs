@@ -18,6 +18,33 @@ impl<T> Point2D<T> {
     }
 }
 
+impl<T: Num + Signed> Point2D<T> {
+    /// ２つのベクトルがつくる平行四辺形の符号付き面積を計算する
+    ///
+    /// - `> 0`: 反時計回り
+    /// - `< 0`: 時計回り
+    /// - `= 0`: 平行・反平行
+    pub fn det(self, other: Self) -> T {
+        self.x * other.y - self.y * other.x
+    }
+
+    /// ２つのベクトルの内積をとる
+    pub fn dot(self, other: Self) -> T {
+        self.x * other.x + self.y * other.y
+    }
+}
+
+impl<T: Integer + Signed + Copy> Point2D<T> {
+    /// +x 方向からの（反時計回りの）偏角で比較する
+    pub fn cmp_by_argument(&self, other: &Self) -> Ordering {
+        // 1. +x を含む上半面と -x を含む下半面でソート（true > false）
+        // 2. 同じグループなら面積の符号を見る。
+        ((self.y, self.x) < (T::zero(), T::zero()))
+            .cmp(&((other.y, other.x) < (T::zero(), T::zero())))
+            .then(self.det(*other).cmp(&T::zero()))
+    }
+}
+
 impl<T: Add<Output = T>> Add for Point2D<T> {
     type Output = Self;
 
@@ -80,30 +107,5 @@ impl<T: Neg<Output = T>> Neg for Point2D<T> {
             x: -self.x,
             y: -self.y,
         }
-    }
-}
-
-impl<T: Num + Signed> Point2D<T> {
-    /// ２つのベクトルがつくる平行四辺形の符号付き面積を計算する
-    ///
-    /// - `> 0`: 反時計回り
-    /// - `< 0`: 時計回り
-    /// - `= 0`: 平行・反平行
-    pub fn det(self, other: Self) -> T {
-        self.x * other.y - self.y * other.x
-    }
-
-    /// ２つのベクトルの内積をとる
-    pub fn dot(self, other: Self) -> T {
-        self.x * other.x + self.y * other.y
-    }
-}
-
-impl<T: Integer + Signed + Copy> Point2D<T> {
-    /// 偏角で比較する。
-    pub fn arg_cmp(self, other: Self) -> Ordering {
-        ((self.y, self.x) < (T::zero(), T::zero()))
-            .cmp(&((other.y, other.x) < (T::zero(), T::zero())))
-            .then(self.det(other).cmp(&T::zero()))
     }
 }
