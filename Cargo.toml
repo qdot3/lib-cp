@@ -11,7 +11,6 @@ members = [
     "ds/rmq",
     "ds/sparse_table",
     "ds/union_find",
-    "fps/fps",
     "geo/convex_hull",
     "geo/point",
     "graph/bipartite",
@@ -20,7 +19,9 @@ members = [
     "graph/lca",
     "graph/scc",
     "graph/tree_dp",
+    "math/factorial",
     "math/floor_sum",
+    "math/fps",
     "math/mint",
     "math/ops",
     "playground",
@@ -53,8 +54,6 @@ rmq = { path = "./ds/rmq" }
 sparse_table = { path = "./ds/sparse_table" }
 union_find = { path = "./ds/union_find" }
 
-fps = { path = "./math/fps" }
-
 convex_hull = { path = "./geo/convex_hull" }
 point = { path = "./geo/point" }
 
@@ -65,7 +64,9 @@ lca = { path = "./graph/lca" }
 scc = { path = "./graph/scc" }
 tree_dp = { path = "./graph/tree_dp" }
 
+factorial = { path = "./math/factorial" }
 floor_sum = { path = "./math/floor_sum" }
+fps = { path = "./math/fps" }
 mint = { path = "./math/mint" }
 ops = { path = "./math/ops" }
 

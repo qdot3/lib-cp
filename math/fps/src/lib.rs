@@ -1,7 +1,8 @@
-use std::ops::Mul;
+use std::ops::{Index, IndexMut, Mul};
 
 use mint::Mint;
 
+#[derive(Debug, Clone)]
 pub struct FPS<T>(
     /// f(x) = Σ_i c[i] x^i
     Vec<T>,
@@ -11,10 +12,6 @@ impl<T> FPS<T> {
     // TODO: capacity と degree を区別したい。iter.size_hint() ?
     const fn degree(&self) -> usize {
         self.0.len()
-    }
-
-    pub fn coefficients(&self, n: usize) -> &[T] {
-        &self.0[..n]
     }
 }
 
@@ -27,6 +24,20 @@ impl<T> From<Vec<T>> for FPS<T> {
 impl<T> FromIterator<T> for FPS<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         Self(Vec::from_iter(iter))
+    }
+}
+
+impl<T> Index<usize> for FPS<T> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
+impl<T> IndexMut<usize> for FPS<T> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.0[index]
     }
 }
 

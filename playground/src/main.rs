@@ -1,23 +1,28 @@
-use proconio::{fastout, input};
+use factorial::Factorial;
+use fps::FPS;
+use mint::Mint;
+use proconio::input;
 
-#[fastout]
 fn main() {
-    input! { t: usize, }
+    const MOD: u32 = 998_244_353;
+    input! { r: usize, g: usize, b: usize, k: usize, x: usize, y: usize, z: usize, }
 
-    for _ in 0..t {
-        input! { mut n: usize, mut wp: [(u64, u64); n], }
-        wp.sort_unstable_by_key(|(w, p)| w + p);
+    let mut red = FPS::<Mint<MOD>>::from(vec![Mint::new(0); r + g + b + 1]);
+    let mut green = red.clone();
+    let mut blue = red.clone();
 
-        let mut sum_w = wp.iter().fold(0, |acc, (w, _)| acc + w);
-        let mut sum_p = 0;
-        for (w, p) in wp.into_iter().rev() {
-            sum_w -= w;
-            sum_p += p;
-            n -= 1;
-            if sum_p >= sum_w {
-                break;
-            }
-        }
-        println!("{}", n)
+    let f = Factorial::<MOD>::with_inverse(r + g + b);
+    for i in k - y..=r {
+        red[i] = f.choose(r, i)
     }
+    for i in k - z..=g {
+        green[i] = f.choose(g, i)
+    }
+    for i in k - x..=b {
+        blue[i] = f.choose(b, i)
+    }
+
+    let prod = blue * red * green;
+
+    println!("{}", prod[k])
 }
