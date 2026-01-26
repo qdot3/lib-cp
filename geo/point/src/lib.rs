@@ -45,6 +45,12 @@ impl<T: Integer + Signed + Copy> Point2D<T> {
     }
 }
 
+impl<T> From<(T, T)> for Point2D<T> {
+    fn from((x, y): (T, T)) -> Self {
+        Self { x, y }
+    }
+}
+
 impl<T: Add<Output = T>> Add for Point2D<T> {
     type Output = Self;
 

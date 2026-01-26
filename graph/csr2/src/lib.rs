@@ -77,6 +77,11 @@ impl<Idx: Index, W, E: EdgeType> CSR<Idx, W, E>
 where
     W: Clone,
 {
+    /// 座標圧縮すること。
+    ///
+    /// # Time Complexity
+    ///
+    /// - *Θ*(*N*) in time
     pub fn new<I>(edges: I, max_index: Idx) -> Self
     where
         I: IntoIterator<Item: Into<Edge<Idx, W>>>,
@@ -126,3 +131,5 @@ where
         }
     }
 }
+
+pub struct TreeCSR {}
