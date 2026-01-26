@@ -53,7 +53,7 @@ rmq = { path = "./ds/rmq" }
 sparse_table = { path = "./ds/sparse_table" }
 union_find = { path = "./ds/union_find" }
 
-fps = { path = "./fps/fps" }
+fps = { path = "./math/fps" }
 
 convex_hull = { path = "./geo/convex_hull" }
 point = { path = "./geo/point" }
