@@ -62,9 +62,10 @@ pub struct RollingHash<const P: u64>
 where
     Prime<P>: SupportedPrime,
 {
-    /// prefix[i] = hash(S[..i]) とする。とくに、prefix[0] = 0
-    prefix: Box<[u64]>,
-    pow_base: Box<[u64]>,
+    /// prefix[i] = hash(S[..i]) とする。とくに、prefix[0] = 0（加法単位元）
+    prefix: Vec<u64>,
+    /// pow_base[i] = base.pow(i)
+    pow_base: Vec<u64>,
 }
 
 impl<const P: u64> RollingHash<P>
@@ -91,10 +92,7 @@ where
             pow_base.push(Prime::<P>::mul_mod(pow_base[i], base));
         }
 
-        Self {
-            prefix: prefix.into_boxed_slice(),
-            pow_base: pow_base.into_boxed_slice(),
-        }
+        Self { prefix, pow_base }
     }
 
     /// 部分文字列のハッシュ値を返す
