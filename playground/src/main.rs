@@ -1,28 +1,39 @@
-use factorial::Factorial;
-use fps::FPS;
-use mint::Mint;
-use proconio::input;
+use proconio::{fastout, input};
 
+#[fastout]
 fn main() {
-    const MOD: u32 = 998_244_353;
-    input! { r: usize, g: usize, b: usize, k: usize, x: usize, y: usize, z: usize, }
+    input! { t: usize, }
 
-    let mut red = FPS::<Mint<MOD>>::from(vec![Mint::new(0); r + g + b + 1]);
-    let mut green = red.clone();
-    let mut blue = red.clone();
+    let mut stack = Vec::new();
+    'trial: for _ in 0..t {
+        input! { n: usize, p: [u32; n], }
 
-    let f = Factorial::<MOD>::with_inverse(r + g + b);
-    for i in k - y..=r {
-        red[i] = f.choose(r, i)
+        // 最適であるための必要条件
+        if p[0] != n as u32 {
+            println!("No");
+            continue;
+        }
+
+        // 木の存在
+        {
+            stack.reserve(n);
+            let mut min_p = p[0];
+            for p in p.iter().skip(1).copied() {
+                if p < min_p {
+                    stack.extend((p + 1..min_p).rev());
+                    min_p = p;
+                } else if !stack.pop().is_some_and(|v| v == p) {
+                    println!("No");
+
+                    stack.clear();
+                    continue 'trial;
+                }
+            }
+        };
+
+        // 最適か？
+
+        println!("Yes");
+        assert!(stack.is_empty());
     }
-    for i in k - z..=g {
-        green[i] = f.choose(g, i)
-    }
-    for i in k - x..=b {
-        blue[i] = f.choose(b, i)
-    }
-
-    let prod = blue * red * green;
-
-    println!("{}", prod[k])
 }

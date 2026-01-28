@@ -1,4 +1,4 @@
-use std::ops::RangeBounds;
+use std::{marker::PhantomData, ops::RangeBounds};
 
 pub trait SupportedPrime {}
 
@@ -22,8 +22,8 @@ where
         let m = ua * lb + ub * la;
         let (um, lm) = (m >> l_size, m & l_mask);
 
-        let res = (ua * ub + um) * (1 + (exp & 1)) * diff + (lm << l_size) + la * lb;
-        res % P
+        let prod = (ua * ub + um) * (1 + (exp & 1)) * diff + (lm << l_size) + la * lb;
+        prod % P
     }
 }
 
@@ -58,7 +58,7 @@ supported_prime_impl! {
 }
 
 #[derive(Debug, Clone)]
-pub struct RollingHash<const P: u64>
+pub struct RollingHash<const P: u64, T>
 where
     Prime<P>: SupportedPrime,
 {
@@ -66,18 +66,22 @@ where
     prefix: Vec<u64>,
     /// pow_base[i] = base.pow(i)
     pow_base: Vec<u64>,
+    base: u64,
+
+    data_type: PhantomData<T>,
 }
 
-impl<const P: u64> RollingHash<P>
+impl<const P: u64, T> RollingHash<P, T>
 where
     Prime<P>: SupportedPrime,
+    T: Into<u64>,
 {
     /// 基数には十分大きな乱数を選ぶこと。
     ///
     /// # Time Complexity
     ///
     /// *Θ*(*N*)
-    pub fn new<T>(base: u64, str: &[T]) -> Self
+    pub fn new(base: u64, str: &[T]) -> Self
     where
         T: Into<u64> + Clone,
     {
@@ -92,7 +96,20 @@ where
             pow_base.push(Prime::<P>::mul_mod(pow_base[i], base));
         }
 
-        Self { prefix, pow_base }
+        Self {
+            prefix,
+            pow_base,
+            base,
+            data_type: PhantomData,
+        }
+    }
+
+    pub fn push(&mut self, value: T) {
+        assert_eq!(self.prefix.len(), self.pow_base.len());
+
+        let i = self.prefix.len() - 1;
+        self.prefix.push((Prime::<P>::mul_mod(self.prefix[i], self.base) + value.into()) % P);
+        self.pow_base.push(Prime::<P>::mul_mod(self.pow_base[i], self.base));
     }
 
     /// 部分文字列のハッシュ値を返す
