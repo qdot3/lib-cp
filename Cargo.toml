@@ -11,6 +11,7 @@ members = [
     "ds/rmq",
     "ds/sparse_table",
     "ds/union_find",
+    "ds/union_find_with_potential",
     "geo/convex_hull",
     "geo/point",
     "graph/bipartite",
@@ -19,6 +20,8 @@ members = [
     "graph/lca",
     "graph/scc",
     "graph/tree_dp",
+    "io/input",
+    "io/from_bytes",
     "math/factorial",
     "math/floor_sum",
     "math/fps",
@@ -53,6 +56,7 @@ lazy_segtree = { path = "./ds/lazy_segtree" }
 rmq = { path = "./ds/rmq" }
 sparse_table = { path = "./ds/sparse_table" }
 union_find = { path = "./ds/union_find" }
+union_find_with_potential = { path = "ds/union_find_with_potential" }
 
 convex_hull = { path = "./geo/convex_hull" }
 point = { path = "./geo/point" }
@@ -74,3 +78,6 @@ sorted_array = { path = "./small/sorted_array" }
 
 rolling_hash = { path = "./string/rolling_hash" }
 z_algorithm = { path = "./string/z_algorithm" }
+
+input = { path = "./io/input" }
+from_bytes = { path = "./io/from_bytes" }

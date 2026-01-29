@@ -1,6 +1,6 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, ops::RangeBounds};
 
-use ops::{marker::Commutative, Monoid, SemiGroup};
+use ops::{marker::Commutative, Group, Monoid, SemiGroup};
 
 /// 可換な半群の値の列に対して、一点更新・累積クエリを高速に計算するデータ構造。
 #[derive(Debug, Clone)]
@@ -33,7 +33,7 @@ where
         let mut res = T::id();
         while n > 0 {
             res = T::op(self.lefts[n - 1], res);
-            n -= 1 << n.trailing_zeros();
+            n &= n - 1
         }
 
         res
@@ -49,7 +49,7 @@ where
         i += 1;
         while i <= self.lefts.len() {
             self.lefts[i - 1] = T::op(self.lefts[i - 1], additional);
-            i += 1 << i.trailing_zeros()
+            i += i & i.wrapping_neg()
         }
     }
 
@@ -107,9 +107,46 @@ where
     }
 }
 
+impl<T> FenwickTree<T>
+where
+    T: Group + Commutative,
+    T::Set: Copy,
+{
+    pub fn range_query<R>(&self, range: R) -> T::Set
+    where
+        R: RangeBounds<usize>,
+    {
+        // 1-based で`l+1..=r`が所望の区間
+        let mut l = match range.start_bound() {
+            std::ops::Bound::Included(l) => *l,
+            std::ops::Bound::Excluded(l) => l + 1,
+            std::ops::Bound::Unbounded => 0,
+        };
+        let mut r = match range.end_bound() {
+            std::ops::Bound::Included(r) => r + 1,
+            std::ops::Bound::Excluded(r) => *r,
+            std::ops::Bound::Unbounded => self.lefts.len(),
+        };
+
+        let mut res = T::id();
+        while l != r {
+            if r > l {
+                // r > 0
+                res = T::op(res, self.lefts[r - 1]);
+                r &= r - 1
+            } else {
+                // l > 0
+                res = T::op(res, T::inv(self.lefts[l - 1]));
+                l &= l - 1
+            }
+        }
+        res
+    }
+}
+
 impl<T> From<Vec<T::Set>> for FenwickTree<T>
 where
-    T: SemiGroup + Commutative,
+    T: Monoid + Commutative,
     T::Set: Copy,
 {
     /// # Time Complexity
@@ -133,7 +170,7 @@ where
 
 impl<T> FromIterator<T::Set> for FenwickTree<T>
 where
-    T: SemiGroup + Commutative,
+    T: Monoid + Commutative,
     T::Set: Copy,
 {
     /// # Time Complexity

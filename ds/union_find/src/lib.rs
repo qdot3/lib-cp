@@ -1,10 +1,10 @@
-use ops::SemiGroup;
+use ops::{marker::Commutative, SemiGroup};
 
 /// 素集合を管理するデータ構造。
 #[derive(Debug, Clone)]
 pub struct UnionFind<T>
 where
-    T: SemiGroup<Set: Copy>,
+    T: Commutative + SemiGroup<Set: Copy>,
 {
     /// 非負なら親へのポインター、負なら要素数を表す。
     parent_or_size: Box<[i32]>,
@@ -15,7 +15,7 @@ where
 
 impl<T> UnionFind<T>
 where
-    T: SemiGroup<Set: Copy>,
+    T: Commutative + SemiGroup<Set: Copy>,
 {
     /// `n`要素で初期化する。
     ///
@@ -46,7 +46,7 @@ where
     ///
     /// # Time Complexity
     ///
-    /// *O*(a(*N*)) amortized
+    /// *O*(α(*N*)) amortized
     pub fn find(&mut self, mut x: usize) -> usize {
         // path halving
         loop {
@@ -69,7 +69,7 @@ where
     ///
     /// # Time Complexity
     ///
-    /// *O*(a(*N*)) amortized
+    /// *O*(α(*N*)) amortized
     pub fn find_value(&mut self, x: usize) -> T::Set {
         self.value[self.find(x)]
     }
@@ -79,7 +79,7 @@ where
     ///
     /// # Time Complexity
     ///
-    /// *O*(a(*N*)) amortized
+    /// *O*(α(*N*)) amortized
     pub fn union(&mut self, mut x: usize, mut y: usize) -> bool {
         x = self.find(x);
         y = self.find(y);
@@ -102,7 +102,7 @@ where
     ///
     /// # Time Complexity
     ///
-    /// *O*(a(*N*)) amortized
+    /// *O*(α(*N*)) amortized
     pub fn same(&mut self, x: usize, y: usize) -> bool {
         self.find(x) == self.find(y)
     }
@@ -111,7 +111,7 @@ where
     ///
     /// # Time Complexity
     ///
-    /// *O*(a(*N*)) amortized
+    /// *O*(α(*N*)) amortized
     pub fn size(&mut self, x: usize) -> usize {
         -self.parent_or_size[self.find(x)] as usize
     }

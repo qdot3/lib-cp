@@ -33,6 +33,7 @@ rmq = { workspace = true }
 fenwick = { workspace = true }
 lazy_segtree = { workspace = true }
 union_find = { workspace = true }
+union_find_with_potential={workspace = true}
 
 factorial = { workspace = true }
 floor_sum = { workspace = true }

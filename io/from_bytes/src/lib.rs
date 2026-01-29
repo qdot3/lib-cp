@@ -1,7 +1,5 @@
 use std::num::IntErrorKind;
 
-fn main() {}
-
 /// `b"12345678"`を`12345678_u64`に変換する。
 #[inline(always)]
 const fn parse_8_digits(bytes: [u8; 8]) -> Result<u64, IntErrorKind> {
