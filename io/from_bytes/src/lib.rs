@@ -52,16 +52,9 @@ pub trait FromBytes: Sized {
 
 macro_rules! parse_digits {
     ( $t:ty, $digits:ident, $mul:tt, $add:ident $(, $overflow: path )* ) => {{
-        let (chunks, remainder) = $digits.as_chunks::<8>();
+        let (remainder, chunks) = $digits.as_rchunks::<8>();
         let mut n = 0 as $t;
-        for chunk in chunks {
-            n = n.$mul(#[allow(overflowing_literals)] 1_0000_0000) $(.ok_or($overflow)?)*;
-            n = n.$add(parse_8_digits(*chunk)? as $t) $(.ok_or($overflow)?)*;
-        }
 
-        #[allow(overflowing_literals)]
-        const POW10: [$t; 8] = [1, 10, 100, 1000, 1_0000, 10_0000, 100_0000, 1000_0000];
-        n = n.$mul(POW10[remainder.len()]) $(.ok_or($overflow)?)*;
         if remainder.len() > 4 {
             let mut digits = [b'0'; 8];
             digits[8 - remainder.len()..].copy_from_slice(remainder);
@@ -70,6 +63,11 @@ macro_rules! parse_digits {
             let mut digits = [b'0'; 4];
             digits[4 - remainder.len()..].copy_from_slice(remainder);
             n = n.$add(parse_4_digits(digits)? as $t) $(.ok_or($overflow)?)*;
+        }
+
+        for chunk in chunks {
+            n = n.$mul(#[allow(overflowing_literals)] 1_0000_0000) $(.ok_or($overflow)?)*;
+            n = n.$add(parse_8_digits(*chunk)? as $t) $(.ok_or($overflow)?)*;
         }
 
         n
