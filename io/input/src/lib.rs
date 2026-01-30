@@ -22,7 +22,7 @@ where
         }
     }
 
-    /// 空白区切りのバイト列をパースして返す。
+    /// 空白区切りのバイト列を１つパースして返す。
     pub fn next_token<T>(&mut self) -> Option<T>
     // TODO: anyhow を使う
     where
@@ -54,6 +54,18 @@ where
             token
         }
         .ok()
+    }
+
+    pub fn next_token_vec<T>(&mut self, len: usize) -> Option<Vec<T>>
+    // TODO: anyhow を使う
+    where
+        T: FromBytes,
+    {
+        let mut vec = Vec::with_capacity(len);
+        for _ in 0..len {
+            vec.push(self.next_token()?)
+        }
+        Some(vec)
     }
 
     /// 空白区切りのバイト列を１つ書き込む。
@@ -98,31 +110,44 @@ mod tests {
 
     #[test]
     fn extract_bytes() {
-        let lorem_ipsum = b"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+        let lorem_ipsum = br"
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation 
+        ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in 
+        reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur 
+        sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
+         laborum.";
 
         let mut input = FastInput::new(&lorem_ipsum[..]);
 
         let mut buf = Vec::new();
-        for token in lorem_ipsum.split(|b| b.is_ascii_whitespace()) {
+        for token in lorem_ipsum
+            .split(|b| b.is_ascii_whitespace())
+            .filter(|v| !v.is_empty())
+        {
             input.next_bytes(&mut buf).unwrap();
-            assert_eq!(&buf, token);
+            assert_eq!(buf, token);
 
             buf.clear();
         }
+        assert!({
+            input.next_bytes(&mut buf).unwrap();
+            buf.is_empty()
+        });
     }
 
     #[test]
     fn extract_token() {
         let mut input = FastInput::new(
-            &br#"1 2
+            &br"1 2
 11 22
-1000000000000000000 1000000000000000000"#[..],
+1000000000000000000 1000000000000000000"[..],
         );
 
         let num: Vec<u64> = std::iter::from_fn(|| input.next_token()).collect();
         assert_eq!(
             num,
             vec![1, 2, 11, 22, 1000000000000000000, 1000000000000000000]
-        )
+        );
+        assert!(input.next_token::<u64>().is_none());
     }
 }
