@@ -45,3 +45,4 @@ rolling_hash = { workspace = true }
 z_algorithm = { workspace = true }
 
 from_bytes = { workspace = true }
+input = { workspace = true }

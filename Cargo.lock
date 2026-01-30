@@ -105,6 +105,9 @@ dependencies = [
 [[package]]
 name = "input"
 version = "0.1.0"
+dependencies = [
+ "from_bytes",
+]
 
 [[package]]
 name = "itertools"
@@ -237,6 +240,7 @@ dependencies = [
  "floor_sum",
  "fps",
  "from_bytes",
+ "input",
  "itertools",
  "lazy_segtree",
  "lca",

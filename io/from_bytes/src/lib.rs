@@ -1,3 +1,5 @@
+//! 参考サイト
+//! - <https://zenn.dev/mizar/articles/fc87d667153080>
 use std::num::IntErrorKind;
 
 /// `b"12345678"`を`12345678_u64`に変換する。
