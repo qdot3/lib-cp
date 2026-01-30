@@ -236,6 +236,7 @@ dependencies = [
  "fixedbitset",
  "floor_sum",
  "fps",
+ "from_bytes",
  "itertools",
  "lazy_segtree",
  "lca",

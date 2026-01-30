@@ -1,7 +1,6 @@
 use std::num::IntErrorKind;
 
 /// `b"12345678"`を`12345678_u64`に変換する。
-#[inline(always)]
 const fn parse_8_digits(bytes: [u8; 8]) -> Result<u64, IntErrorKind> {
     // ascii コードの 0x30..=0x39 が数値に対応している
     let mut n = u64::from_le_bytes(bytes) ^ 0x3030_3030_3030_3030;
@@ -18,12 +17,12 @@ const fn parse_8_digits(bytes: [u8; 8]) -> Result<u64, IntErrorKind> {
 
         Ok(n)
     } else {
+        // TODO: cold_path();
         Err(IntErrorKind::InvalidDigit)
     }
 }
 
 /// `b"1234"`を`1234_u32`に変換する。
-#[inline(always)]
 const fn parse_4_digits(bytes: [u8; 4]) -> Result<u32, IntErrorKind> {
     // ascii コードの 0x30..=0x39 が数値に対応している
     let mut n = u32::from_le_bytes(bytes) ^ 0x3030_3030;
@@ -38,6 +37,7 @@ const fn parse_4_digits(bytes: [u8; 4]) -> Result<u32, IntErrorKind> {
 
         Ok(n)
     } else {
+        // TODO: cold_path();
         Err(IntErrorKind::InvalidDigit)
     }
 }
@@ -48,7 +48,7 @@ pub trait FromBytes: Sized {
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err>;
 }
 
-macro_rules! calc_digits {
+macro_rules! parse_digits {
     ( $t:ty, $digits:ident, $mul:tt, $add:ident $(, $overflow: path )* ) => {{
         let (chunks, remainder) = $digits.as_chunks::<8>();
         let mut n = 0 as $t;
@@ -107,15 +107,15 @@ macro_rules! from_bytes_impl {
 
                 let n = if never_overflow {
                     if is_positive {
-                        calc_digits!($t, digits, wrapping_mul, wrapping_add)
+                        parse_digits!($t, digits, wrapping_mul, wrapping_add)
                     } else {
-                        calc_digits!($t, digits, wrapping_mul, wrapping_sub)
+                        parse_digits!($t, digits, wrapping_mul, wrapping_sub)
                     }
                 } else {
                     if is_positive {
-                        calc_digits!($t, digits, checked_mul, checked_add, IntErrorKind::PosOverflow)
+                        parse_digits!($t, digits, checked_mul, checked_add, IntErrorKind::PosOverflow)
                     } else {
-                        calc_digits!($t, digits, checked_mul, checked_sub, IntErrorKind::NegOverflow)
+                        parse_digits!($t, digits, checked_mul, checked_sub, IntErrorKind::NegOverflow)
                     }
                 };
 
