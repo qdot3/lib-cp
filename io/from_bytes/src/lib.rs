@@ -127,7 +127,26 @@ macro_rules! from_bytes_impl {
 from_bytes_impl!( i32 u32 i64 u64 i128 u128 isize usize );
 
 // 最大桁数が８未満だとオーバーフローしてしまう（MIN.abs() = MAX + 1）
-macro_rules! from_bytes_impl_small {
+macro_rules! from_bytes_impl_small_unsigned {
+    ($( $t:ty )*) => {$(
+        impl FromBytes for $t {
+            type Err = IntErrorKind;
+
+            fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
+                let v = u32::from_bytes(bytes)?;
+
+                if v > <$t>::MAX as u32 {
+                    Err(IntErrorKind::PosOverflow)
+                } else{
+                    Ok(v as $t)
+                }
+            }
+        }
+    )*};
+}
+from_bytes_impl_small_unsigned!( u8 u16 );
+
+macro_rules! from_bytes_impl_small_signed {
     ($( $t:ty )*) => {$(
         impl FromBytes for $t {
             type Err = IntErrorKind;
@@ -146,7 +165,7 @@ macro_rules! from_bytes_impl_small {
         }
     )*};
 }
-from_bytes_impl_small!( i8 u8 i16 u16 );
+from_bytes_impl_small_signed!( i8 i16 );
 
 #[cfg(test)]
 mod tests {
