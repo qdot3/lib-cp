@@ -89,7 +89,6 @@ where
             let (done, used) =
                 if let Some(n) = available.iter().position(|b| b.is_ascii_whitespace()) {
                     buf.extend_from_slice(&available[..n]);
-
                     (true, n + 1)
                 } else {
                     buf.extend_from_slice(&available);
@@ -111,11 +110,11 @@ mod tests {
     #[test]
     fn extract_bytes() {
         let lorem_ipsum = br"
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation 
-        ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in 
-        reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur 
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+        ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
+        reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur
         sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
-         laborum.";
+        laborum.";
 
         let mut input = FastInput::new(&lorem_ipsum[..]);
 

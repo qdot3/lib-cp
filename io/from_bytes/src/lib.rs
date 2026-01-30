@@ -66,7 +66,7 @@ macro_rules! parse_digits {
         }
 
         for chunk in chunks {
-            n = n.$mul(#[allow(overflowing_literals)] 1_0000_0000) $(.ok_or($overflow)?)*;
+            n = n.$mul(1_0000_0000) $(.ok_or($overflow)?)*;
             n = n.$add(parse_8_digits(*chunk)? as $t) $(.ok_or($overflow)?)*;
         }
 

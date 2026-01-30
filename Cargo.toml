@@ -31,7 +31,6 @@ members = [
     "small/sorted_array",
     "string/rolling_hash",
     "string/z_algorithm",
-    "io/output",
 ]
 
 [workspace.package]
@@ -81,5 +80,4 @@ rolling_hash = { path = "./string/rolling_hash" }
 z_algorithm = { path = "./string/z_algorithm" }
 
 input = { path = "./io/input" }
-output = { path = "./io/output" }
 from_bytes = { path = "./io/from_bytes" }
