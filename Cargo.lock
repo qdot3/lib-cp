@@ -119,6 +119,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "kmp"
+version = "0.1.0"
+
+[[package]]
 name = "lazy_segtree"
 version = "0.1.0"
 dependencies = [
@@ -239,9 +243,8 @@ dependencies = [
  "fixedbitset",
  "floor_sum",
  "fps",
- "from_bytes",
- "input",
  "itertools",
+ "kmp",
  "lazy_segtree",
  "lca",
  "mint",

@@ -6,7 +6,7 @@ rust-version.workspace = true
 
 [dependencies]
 # AtCoder 2025/11 以降に利用できるクレート
-# cargo equip がバグるので、ここではバージョンを明記する。メンバーでは継承すればよい。
+# cargo equip がバグるので、ここではバージョンを明記する。メンバーは継承すればよい。
 # 恐らく、一時的なワークスペースを作成する際に、この Cargo.toml を参照している。
 rustc-hash = "2.1.1"
 itertools = "0.14.0"
@@ -43,6 +43,7 @@ mint = { workspace = true }
 
 rolling_hash = { workspace = true }
 z_algorithm = { workspace = true }
+kmp = { workspace = true }
 
-from_bytes = { workspace = true }
-input = { workspace = true }
+# from_bytes = { workspace = true }
+# input = { workspace = true }
