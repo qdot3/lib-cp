@@ -1,9 +1,10 @@
-/// 文字列 `S` の接頭辞と `S[1..i]` の接尾辞の最長共通連続部分の長さを計算する。
+/// 文字列 `S` び接頭辞と `S[1..i]` の接尾辞の最長共通連続部分列の長さを計算する。
+///
+/// TODO: online 化できる
 ///
 /// # Time Complexity
 ///
 /// *Θ*(*N*)
-// TODO: online 化できる
 pub fn kmp<T: Eq>(str: &[T]) -> Vec<usize> {
     let mut len = Vec::with_capacity(str.len());
     len.push(0);
