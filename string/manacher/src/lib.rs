@@ -17,14 +17,19 @@ pub fn manacher<T: Eq>(str: &[T]) -> Vec<usize> {
     for i in 2..str.len() * 2 {
         // 計算済みの半径を再利用する。未調査の区間があればカットする。
         // c+r >= i より、アンダーフローしない
-        let mut ri = (r - i).min(radius[l + (r - i) - 1]).max(1);
+        let mut ri = (r - i).min(radius[l + (r - i) - 1]);
 
         // 未調査の区間まで回文を延長する。
         // i ± ri が偶数のときは区切り文字なので一致し、奇数のときは文字を比較する。
-        // 偶数の場合は内側に丸めればよい。
-        ri = (ri..i)
-            .find(|ri| str.get((i - ri) / 2) != str.get((i + ri - 1) / 2))
-            .unwrap_or(i);
+        let max_ri = (2 * str.len() - i + 1).min(i);
+        ri = (ri..max_ri)
+            // 偶数番目をスキップ
+            .skip(!(i ^ ri) & 1)
+            .step_by(2)
+            // i + ri は奇数より、アンダーフローも左右反転もない
+            .find(|ri| str[(i - ri) / 2] != str[(i + ri - 1) / 2])
+            // `$ + str + ~` と同じ
+            .unwrap_or(max_ri);
 
         radius.push(ri);
         if i + ri > r {
@@ -32,7 +37,7 @@ pub fn manacher<T: Eq>(str: &[T]) -> Vec<usize> {
         }
     }
 
-    // 先頭に区切り文字`#`を追加すると、長さ 2r-1 の回文のうち栗切り文字は r 個ある。
+    // 先頭に区切り文字`#`を追加すると、長さ 2r-1 の回文のうち区切り文字は r 個ある。
     // 区切り文字を除いた回文の長さは、r-1 である。
     for i in 0..radius.len() {
         if radius[i] != i + 1 {
@@ -48,35 +53,31 @@ mod tests {
     use super::*;
     use rand::{self, Rng};
 
-    fn assert<T: Eq>(str: &[T]) {
-        let brute_force = |str: &[T]| {
-            let mut res = Vec::with_capacity(str.len() * 2);
-            for i in 0..str.len() {
-                let odd_r = (0..=i)
-                    .take_while(|r| str.get(i - r) == str.get(i + r))
-                    .count();
-                res.push(odd_r * 2 - 1);
+    fn brute_force<T: Eq>(str: &[T]) -> Vec<usize> {
+        let mut res = Vec::with_capacity(str.len() * 2);
+        for i in 0..str.len() {
+            let odd_r = (0..=i)
+                .take_while(|r| str.get(i - r) == str.get(i + r))
+                .count();
+            res.push(odd_r * 2 - 1);
 
-                let even_r = (0..=i)
-                    .take_while(|r| str.get(i - r) == str.get(i + r + 1))
-                    .count();
-                res.push(even_r * 2);
-            }
-            res.pop();
+            let even_r = (0..=i)
+                .take_while(|r| str.get(i - r) == str.get(i + r + 1))
+                .count();
+            res.push(even_r * 2);
+        }
+        res.pop();
 
-            res
-        };
-
-        assert_eq!(manacher(str), brute_force(str))
+        res
     }
 
     #[test]
     fn random() {
         let mut rng = rand::rng();
-        for _ in 0..100 {
-            let s: Vec<u8> = (0..500).map(|_| rng.random_range(0..4)).collect();
+        for n in 400..600 {
+            let s: Vec<u8> = (0..n).map(|_| rng.random_range(0..4)).collect();
 
-            assert(&s);
+            assert_eq!(manacher(&s), brute_force(&s))
         }
     }
 }
