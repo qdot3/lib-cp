@@ -2,10 +2,14 @@
 ///
 /// 返り値を`len`とすると、
 ///
-/// - `len[2i]`は`S[i]`を中心とする奇数長の回文の長さの最大値
-/// - `len[2i+1]`は`S[i..i+2]`を中心とする偶数長の回文の長さの最大値
+/// - `len[2i]`は`S[i]`を中心とする奇数長の回文の直径の最大値
+/// - `len[2i+1]`は`S[i..i+2]`を中心とする偶数長の回文の直径の最大値
 ///
 /// にそれぞれ対応している。
+///
+/// # Time Complexity
+///
+/// *Θ*(*N*)
 pub fn manacher<T: Eq>(str: &[T]) -> Vec<usize> {
     // str は [s[0], #, s[1], ..., #] と解釈される
     let mut radius = Vec::with_capacity(str.len() * 2);
@@ -23,7 +27,7 @@ pub fn manacher<T: Eq>(str: &[T]) -> Vec<usize> {
         // i ± ri が偶数のときは区切り文字なので一致し、奇数のときは文字を比較する。
         let max_ri = (2 * str.len() - i + 1).min(i);
         ri = (ri..max_ri)
-            // 偶数番目をスキップ
+            // 偶数番目をスキップ。
             .skip(!(i ^ ri) & 1)
             .step_by(2)
             // i + ri は奇数より、アンダーフローも左右反転もない
@@ -53,6 +57,7 @@ mod tests {
     use super::*;
     use rand::{self, Rng};
 
+    /// *Θ*(*N*^2)
     fn brute_force<T: Eq>(str: &[T]) -> Vec<usize> {
         let mut res = Vec::with_capacity(str.len() * 2);
         for i in 0..str.len() {
