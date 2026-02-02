@@ -18,6 +18,11 @@ macro_rules! f_read_value {
         $source.next_bytes(&mut bytes).unwrap();
         bytes
     }};
+    (@source [$source:expr] @rest String $(with capacity $len:expr)? $(,)?) => {{
+        String::from_utf8(
+            $crate::f_read_value!(@source [$source] @rest Bytes $(with capacity $len)?)
+        ).unwrap()
+    }};
     (@source [$source:expr] @rest $item:ty $(,)?) => {
         $source.next_token::<$item>().unwrap()
     };
@@ -150,6 +155,13 @@ mod parse_single_value {
         let n = f_read_value!(input => u8);
         let x = f_read_value!(input => Bytes with capacity n);
         assert_eq!(x, b"abcde")
+    }
+    #[test]
+
+    fn string() {
+        let mut input = FastInput::new(&b"abcde"[..]);
+        let x = f_read_value!(input => String);
+        assert_eq!(x, "abcde".to_string())
     }
 }
 

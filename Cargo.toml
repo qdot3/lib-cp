@@ -31,7 +31,9 @@ members = [
     "small/sorted_array",
     "string/rolling_hash",
     "string/z_algorithm",
-    "string/kmp", "string/manacher", "io/macros",
+    "string/kmp",
+    "string/manacher",
+    "io/macros",
 ]
 
 [workspace.package]
@@ -83,3 +85,4 @@ kmp = { path = "./string/kmp" }
 
 input = { path = "./io/input" }
 from_bytes = { path = "./io/from_bytes" }
+io_macros = { path = "./io/macros" }
