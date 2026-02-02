@@ -15,6 +15,7 @@ impl<R> FastInput<R>
 where
     R: BufRead,
 {
+    #[inline]
     pub fn new(reader: R) -> Self {
         Self {
             reader,
