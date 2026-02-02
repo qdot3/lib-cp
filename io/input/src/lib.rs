@@ -153,15 +153,15 @@ mod tests {
 
 /// Parse single `Bytes`, `String`s, primitive integers, `Vec`tor or tuple.
 #[macro_export]
-macro_rules! parse_value {
+macro_rules! parse {
     (@source [$source:ident] @rest $(,)?) => {};
 
     // accept only single types
     (@source [$source:ident] @rest [$($item:tt)+] $(,)?) => {
-        $crate::parse_value!(@vec @source [$source] @item [$($item)+] @rest)
+        $crate::parse!(@vec @source [$source] @item [$($item)+] @rest)
     };
     (@source [$source:ident] @rest ($($item:tt)+) $(,)?) => {
-        $crate::parse_value!(@tuple @source [$source] @item [$($item)+] @rest)
+        $crate::parse!(@tuple @source [$source] @item [$($item)+] @rest)
     };
     (@source [$source:ident] @rest Bytes $(with capacity $len:expr)? $(,)?) => {{
         let mut bytes = Vec::with_capacity(0 $(+ TryInto::<usize>::try_into($len).unwrap())?);
@@ -170,7 +170,7 @@ macro_rules! parse_value {
     }};
     (@source [$source:ident] @rest String $(with capacity $len:expr)? $(,)?) => {{
         String::from_utf8(
-            $crate::parse_value!(@source [$source] @rest Bytes $(with capacity $len)?)
+            $crate::parse!(@source [$source] @rest Bytes $(with capacity $len)?)
         ).unwrap()
     }};
     (@source [$source:ident] @rest $item:ty $(,)?) => {
@@ -180,24 +180,24 @@ macro_rules! parse_value {
     // parse vec items
     (@vec @source [$source:ident] @item [[$($item:tt)+] ; $len:expr] @rest) => {
         (0..$len).into_iter().map(|_|
-            $crate::parse_value!(@source [$source] @rest [$($item)+])
+            $crate::parse!(@source [$source] @rest [$($item)+])
         ).collect::<Vec<_>>()
     };
     (@vec @source [$source:ident] @item [($($item:tt)+) ; $len:expr] @rest) => {
         (0..$len).into_iter().map(|_|
-            $crate::parse_value!(@source [$source] @rest ($($item)+))
+            $crate::parse!(@source [$source] @rest ($($item)+))
         ).collect::<Vec<_>>()
     };
     (@vec @source [$source:ident] @item [$item:ty ; $len:expr] @rest) => {
         (0..$len).into_iter().map(|_|
-            $crate::parse_value!(@source [$source] @rest $item)
+            $crate::parse!(@source [$source] @rest $item)
         ).collect::<Vec<_>>()
     };
 
     // parse tuple items
     (@tuple @source [$source:ident] @item [$($item:tt),+  $(,)?] @rest) => {
         ($(
-            $crate::parse_value!(@source [$source] @rest $item ),
+            $crate::parse!(@source [$source] @rest $item ),
         )+)
     };
 
@@ -208,42 +208,42 @@ macro_rules! parse_value {
 
     // interface
     ($source:ident >> $( $rest:tt )*) => {
-        $crate::parse_value!(@source [$source] @rest $($rest)*)
+        $crate::parse!(@source [$source] @rest $($rest)*)
     };
 }
 
 #[cfg(test)]
 mod parse_single_value {
-    use super::parse_value;
+    use super::parse;
 
     use super::FastInput;
 
     #[test]
     fn vec() {
         let mut input = FastInput::new(&b"1 2"[..]);
-        let x = parse_value!(input >> [u8; 2], );
+        let x = parse!(input >> [u8; 2], );
         assert_eq!(x, vec![1, 2]);
     }
 
     #[test]
     fn vec_with_runtime_specified_len() {
         let mut input = FastInput::new(&b"3 1 2 3"[..]);
-        let n = parse_value!(input >> u8);
-        let x = parse_value!(input >> [u8; n], );
+        let n = parse!(input >> u8);
+        let x = parse!(input >> [u8; n], );
         assert_eq!(x, vec![1, 2, 3]);
     }
 
     #[test]
     fn nested_vec1() {
         let mut input = FastInput::new(&b"1 2 3 4"[..]);
-        let x = parse_value!(input >> [[u8; 2]; 2], );
+        let x = parse!(input >> [[u8; 2]; 2], );
         assert_eq!(x, vec![vec![1, 2], vec![3, 4]]);
     }
 
     #[test]
     fn nested_vec2() {
         let mut input = FastInput::new(&b"1 2 3 4 5 6 7 8"[..]);
-        let x = parse_value!(input >> [[[u8; 2]; 2]; 2], );
+        let x = parse!(input >> [[[u8; 2]; 2]; 2], );
         assert_eq!(
             x,
             vec![vec![vec![1, 2], vec![3, 4]], vec![vec![5, 6], vec![7, 8]]]
@@ -253,115 +253,115 @@ mod parse_single_value {
     #[test]
     fn tuple() {
         let mut input = FastInput::new(&b"1 2"[..]);
-        let x = parse_value!(input >> (u8, u8,),);
+        let x = parse!(input >> (u8, u8,),);
         assert_eq!(x, (1, 2));
     }
 
     #[test]
     fn nested_tuple1() {
         let mut input = FastInput::new(&b"1 2 3"[..]);
-        let x = parse_value!(input >> (u8, (u8, u8),),);
+        let x = parse!(input >> (u8, (u8, u8),),);
         assert_eq!(x, (1, (2, 3)));
     }
 
     #[test]
     fn nested_tuple2() {
         let mut input = FastInput::new(&b"1 2 3"[..]);
-        let x = parse_value!(input >> ((u8, u8), u8, ),);
+        let x = parse!(input >> ((u8, u8), u8, ),);
         assert_eq!(x, ((1, 2), 3));
     }
 
     #[test]
     fn nested_tuple3() {
         let mut input = FastInput::new(&b"1 2 3 4 5 6"[..]);
-        let x = parse_value!(input >> (((u8, u8), u8, (u8)), (u8, u8)),);
+        let x = parse!(input >> (((u8, u8), u8, (u8)), (u8, u8)),);
         assert_eq!(x, (((1, 2), 3, (4,)), (5, 6)));
     }
 
     #[test]
     fn tuple_in_vec() {
         let mut input = FastInput::new(&b"1 2 3 4"[..]);
-        let x = parse_value!(input >> [(u8, u8); 2]);
+        let x = parse!(input >> [(u8, u8); 2]);
         assert_eq!(x, vec![(1, 2), (3, 4)])
     }
 
     #[test]
     fn vec_in_tuple() {
         let mut input = FastInput::new(&b"1 2 3 4 5"[..]);
-        let x = parse_value!(input >> ([u8; 2], [u8; 3]));
+        let x = parse!(input >> ([u8; 2], [u8; 3]));
         assert_eq!(x, (vec![1, 2], vec![3, 4, 5]))
     }
 
     #[test]
     fn bytes() {
         let mut input = FastInput::new(&b"abcde"[..]);
-        let x = parse_value!(input >> Bytes);
+        let x = parse!(input >> Bytes);
         assert_eq!(x, b"abcde")
     }
 
     #[test]
     fn bytes_with_capacity() {
         let mut input = FastInput::new(&b"5 abcde"[..]);
-        let n = parse_value!(input >> u8);
-        let x = parse_value!(input >> Bytes with capacity n);
+        let n = parse!(input >> u8);
+        let x = parse!(input >> Bytes with capacity n);
         assert_eq!(x, b"abcde")
     }
     #[test]
 
     fn string() {
         let mut input = FastInput::new(&b"abcde"[..]);
-        let x = parse_value!(input >> String);
+        let x = parse!(input >> String);
         assert_eq!(x, "abcde".to_string())
     }
 }
 
 /// Parse one or more values.
 #[macro_export]
-macro_rules! parse {
+macro_rules! bind {
     // terminator
     (@source [$source:ident] @rest) => {};
 
     // strip leading commas
     (@source [$source:ident] @rest , $($rest:tt)*) => {
-        $crate::parse!(@source [$source] @rest $($rest)*)
+        $crate::bind!(@source [$source] @rest $($rest)*)
     };
 
     // parse mutability
     (@source [$source:ident] @rest mut $( $rest:tt )*) => {
-        $crate::parse!(@source [$source] @mut [mut] @rest $($rest)*)
+        $crate::bind!(@source [$source] @mut [mut] @rest $($rest)*)
     };
     (@source [$source:ident] @rest $( $rest:tt )*) => {
-        $crate::parse!(@source [$source] @mut [] @rest $($rest)*)
+        $crate::bind!(@source [$source] @mut [] @rest $($rest)*)
     };
 
     // parse identifier
     (@source [$source:ident] @mut [$($mut:tt)?] @rest $ident:tt : $( $rest:tt )*) => {
-        $crate::parse!(@source [$source] @mut [$($mut)?] @ident [$ident] @rest $($rest)*)
+        $crate::bind!(@source [$source] @mut [$($mut)?] @ident [$ident] @rest $($rest)*)
     };
 
     // parse types and values
     // tuple
     (@source [$source:ident] @mut [$($mut:tt)?] @ident [$ident:tt] @rest ($($t:tt)+) $( $rest:tt )*) => {
-        let $($mut)? $ident = $crate::parse_value!($source >> ( $($t)+ ));
+        let $($mut)? $ident = $crate::parse!($source >> ( $($t)+ ));
 
-        $crate::parse!(@source [$source] @rest $($rest)*)
+        $crate::bind!(@source [$source] @rest $($rest)*)
     };
     // vec
     (@source [$source:ident] @mut [$($mut:tt)?] @ident [$ident:tt] @rest [$($t:tt)+] $( $rest:tt )*) => {
-        let $($mut)? $ident = $crate::parse_value!($source >> [ $($t)+ ]);
+        let $($mut)? $ident = $crate::parse!($source >> [ $($t)+ ]);
 
-        $crate::parse!(@source [$source] @rest $($rest)*)
+        $crate::bind!(@source [$source] @rest $($rest)*)
     };
     // single item
     (@source [$source:ident] @mut [$($mut:tt)?] @ident [$ident:tt] @rest $t:ty, $( $rest:tt )*) => {
-        let $($mut)? $ident = $crate::parse_value!($source >> $t);
+        let $($mut)? $ident = $crate::parse!($source >> $t);
 
-        $crate::parse!(@source [$source] @rest $($rest)*);
+        $crate::bind!(@source [$source] @rest $($rest)*);
     };
     (@source [$source:ident] @mut [$($mut:tt)?] @ident [$ident:tt] @rest $t:ty)=> {
-        let $($mut)? $ident = $crate::parse_value!($source >> $t);
+        let $($mut)? $ident = $crate::parse!($source >> $t);
 
-        $crate::parse!(@source [$source] @rest);
+        $crate::bind!(@source [$source] @rest);
     };
 
     // bug!
@@ -370,27 +370,27 @@ macro_rules! parse {
     };
 
     ($source:ident >> $( $rest:tt )*) => {
-        $crate::parse!(@source [$source] @rest $($rest)*)
+        $crate::bind!(@source [$source] @rest $($rest)*)
     };
 }
 
 #[cfg(test)]
-mod parse_values {
-    use super::parse;
+mod parses {
+    use super::bind;
 
     use super::FastInput;
 
     #[test]
     fn single() {
         let mut input = FastInput::new(&b"1"[..]);
-        parse!( input >> x: u8, );
+        bind!( input >> x: u8, );
         assert_eq!(x, 1)
     }
 
     #[test]
     fn mutability() {
         let mut input = FastInput::new(&b"1 2"[..]);
-        parse!( input >> mut x: u8, y: u8);
+        bind!( input >> mut x: u8, y: u8);
         x += 1;
         assert_eq!(x, y)
     }
@@ -398,21 +398,21 @@ mod parse_values {
     #[test]
     fn vec() {
         let mut input = FastInput::new(&b"1 2"[..]);
-        parse!( input >> x: [u8; 2], );
+        bind!( input >> x: [u8; 2], );
         assert_eq!(x, vec![1, 2])
     }
 
     #[test]
     fn tuple() {
         let mut input = FastInput::new(&b"1 2"[..]);
-        parse!( input >> x: (u8, u8));
+        bind!( input >> x: (u8, u8));
         assert_eq!(x, (1, 2))
     }
 
     #[test]
     fn multiple_variables() {
         let mut input = FastInput::new(&b"1 2 3 4 5 6 "[..]);
-        parse!( input >> x: (u8, u8), y: u8, z: [u8; y]);
+        bind!( input >> x: (u8, u8), y: u8, z: [u8; y]);
 
         assert_eq!(x, (1, 2));
         assert_eq!(y, 3);

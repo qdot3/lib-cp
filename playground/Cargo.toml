@@ -46,5 +46,5 @@ z_algorithm = { workspace = true }
 kmp = { workspace = true }
 manacher = { workspace = true }
 
-# from_bytes = { workspace = true }
-# input = { workspace = true }
+from_bytes = { workspace = true }
+input = { workspace = true }
