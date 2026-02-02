@@ -144,14 +144,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37c93d8daa9d8a012fd8ab92f088405fb202ea0b6ab73ee2482ae66af4f42091"
 
 [[package]]
-name = "macros"
-version = "0.1.0"
-dependencies = [
- "from_bytes",
- "input",
-]
-
-[[package]]
 name = "manacher"
 version = "0.1.0"
 dependencies = [
@@ -262,6 +254,7 @@ dependencies = [
  "kmp",
  "lazy_segtree",
  "lca",
+ "manacher",
  "mint",
  "num",
  "ops",

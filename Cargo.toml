@@ -33,7 +33,6 @@ members = [
     "string/z_algorithm",
     "string/kmp",
     "string/manacher",
-    "io/macros",
 ]
 
 [workspace.package]
@@ -82,7 +81,7 @@ sorted_array = { path = "./small/sorted_array" }
 rolling_hash = { path = "./string/rolling_hash" }
 z_algorithm = { path = "./string/z_algorithm" }
 kmp = { path = "./string/kmp" }
+manacher = { path = "./string/manacher" }
 
 input = { path = "./io/input" }
 from_bytes = { path = "./io/from_bytes" }
-macros = { path = "./io/macros" }
