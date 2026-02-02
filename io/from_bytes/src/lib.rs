@@ -3,6 +3,8 @@
 use std::num::IntErrorKind;
 
 /// `b"12345678"`を`12345678_u64`に変換する。
+// inlined due to frequent calls
+#[inline]
 const fn parse_8_digits(bytes: [u8; 8]) -> Result<u64, IntErrorKind> {
     // ascii コードの 0x30..=0x39 が数値に対応している
     let mut n = u64::from_le_bytes(bytes) ^ 0x3030_3030_3030_3030;
@@ -25,6 +27,7 @@ const fn parse_8_digits(bytes: [u8; 8]) -> Result<u64, IntErrorKind> {
 }
 
 /// `b"1234"`を`1234_u32`に変換する。
+#[inline]
 const fn parse_4_digits(bytes: [u8; 4]) -> Result<u32, IntErrorKind> {
     // ascii コードの 0x30..=0x39 が数値に対応している
     let mut n = u32::from_le_bytes(bytes) ^ 0x3030_3030;
