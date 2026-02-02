@@ -85,4 +85,4 @@ kmp = { path = "./string/kmp" }
 
 input = { path = "./io/input" }
 from_bytes = { path = "./io/from_bytes" }
-io_macros = { path = "./io/macros" }
+macros = { path = "./io/macros" }
