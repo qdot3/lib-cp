@@ -57,7 +57,6 @@ where
     }
 
     pub fn next_token_vec<T>(&mut self, len: usize) -> Option<Vec<T>>
-    // TODO: anyhow を使う
     where
         T: FromBytes,
     {

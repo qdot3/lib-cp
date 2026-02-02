@@ -31,7 +31,7 @@ members = [
     "small/sorted_array",
     "string/rolling_hash",
     "string/z_algorithm",
-    "string/kmp", "string/manacher",
+    "string/kmp", "string/manacher", "io/macros",
 ]
 
 [workspace.package]
