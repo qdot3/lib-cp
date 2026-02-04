@@ -5,4 +5,5 @@ edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 
-[dependencies]
+[dev-dependencies]
+rand = { workspace = true }

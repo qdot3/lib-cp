@@ -1,4 +1,4 @@
-/// 文字列 `S` び接頭辞と `S[1..i]` の接尾辞の最長共通連続部分列の長さを計算する。
+/// すべての部分文字列 `S[0..=i]` について、その接頭辞かつ接尾辞であるような真の部分文字列の長さの最大値をもとめる。
 ///
 /// TODO: online 化できる
 ///
@@ -28,11 +28,35 @@ pub fn kmp<T: Eq>(str: &[T]) -> Vec<usize> {
 
 #[cfg(test)]
 mod tests {
-    use super::kmp;
+    use rand::Rng;
+
+    use crate::kmp;
 
     #[test]
-    fn test() {
-        let len = kmp(b"abc abcd abcd");
-        assert_eq!(len, vec![0, 0, 0, 0, 1, 2, 3, 0, 0, 1, 2, 3, 0])
+    fn handmade() {
+        let len = kmp(b"abc abcd abc ");
+        assert_eq!(len, vec![0, 0, 0, 0, 1, 2, 3, 0, 0, 1, 2, 3, 4])
+    }
+
+    /// *Θ*(*N*^3)
+    fn brute_force<T: Eq>(str: &[T]) -> Vec<usize> {
+        let mut res = Vec::with_capacity(str.len());
+        for i in 0..str.len() {
+            let x = (1..=i)
+                .rfind(|&len| str[..len] == str[i - len + 1..=i])
+                .unwrap_or(0);
+            res.push(x);
+        }
+        res
+    }
+
+    #[test]
+    fn random() {
+        let mut rng = rand::rng();
+        for n in 50..100 {
+            let str = Vec::from_iter((0..n).map(|_| rng.random_range(0u8..4)));
+
+            assert_eq!(kmp(&str), brute_force(&str))
+        }
     }
 }

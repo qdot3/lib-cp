@@ -31,3 +31,42 @@ pub fn z_algorithm<T: Eq>(str: &[T]) -> Vec<usize> {
 
     z
 }
+
+#[cfg(test)]
+mod tests {
+    use rand::Rng;
+
+    use crate::z_algorithm;
+
+    fn brute_force<T: Eq>(str: &[T]) -> Vec<usize> {
+        let mut lcp = Vec::with_capacity(str.len());
+        for i in 0..str.len() {
+            lcp.push(
+                str.iter()
+                    .zip(str[i..].iter())
+                    .take_while(|(a, b)| a == b)
+                    .count(),
+            );
+        }
+
+        lcp
+    }
+
+    #[test]
+    fn random() {
+        let mut rng = rand::rng();
+        for n in 400..600 {
+            let str = Vec::from_iter((0..n).map(|_| rng.random_range(0u8..4)));
+
+            assert_eq!(z_algorithm(&str), brute_force(&str))
+        }
+    }
+
+    #[test]
+    fn handmade() {
+        let str = b"abcdabcaba";
+        let lcp = vec![10, 0, 0, 0, 3, 0, 0, 2, 0, 1];
+
+        assert_eq!(z_algorithm(str), lcp)
+    }
+}

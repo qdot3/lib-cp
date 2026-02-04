@@ -121,6 +121,9 @@ dependencies = [
 [[package]]
 name = "kmp"
 version = "0.1.0"
+dependencies = [
+ "rand",
+]
 
 [[package]]
 name = "lazy_segtree"
@@ -492,6 +495,9 @@ checksum = "f17a85883d4e6d00e8a97c586de764dabcc06133f7f1d55dce5cdc070ad7fe59"
 [[package]]
 name = "z_algorithm"
 version = "0.1.0"
+dependencies = [
+ "rand",
+]
 
 [[package]]
 name = "zerocopy"
