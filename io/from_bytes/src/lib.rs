@@ -37,7 +37,7 @@ const fn parse_4_digits(bytes: [u8; 4]) -> Result<u32, IntErrorKind> {
     if (n & 0xf0f0_f0f0) | (n.wrapping_mul(7) & 0x4040_4040) == 0 {
         // [4, 3, 2, 1] -> [34, 12]
         n = (n.wrapping_mul((10 << 8) + 1) >> 8) & 0x00ff_00ff;
-        // [34, 12] -> \1234]
+        // [34, 12] -> [1234]
         n = n.wrapping_mul((100 << 16) + 1) >> 16;
 
         Ok(n)
@@ -53,8 +53,9 @@ pub trait FromBytes: Sized {
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err>;
 }
 
+/// byte列を前から順にパースする。
 macro_rules! parse_digits {
-    ( $t:ty, $digits:ident, $mul:tt, $add:ident $(, $overflow: path )* ) => {{
+    ( $t:ty, $digits:ident, $mul:tt, $add:ident $(, $overflow:path )* ) => {{
         let (remainder, chunks) = $digits.as_rchunks::<8>();
         let mut n = 0 as $t;
 
@@ -90,7 +91,7 @@ macro_rules! from_bytes_impl {
                 #[allow(unused_comparisons)]
                 let is_signed_ty = <$t>::MIN < 0;
 
-                // 符号は高々１つ。先頭の b'0' を除去しても良いが、レアケース。
+                // 符号は高々１つ
                 let (is_positive, digits) = match bytes {
                     [b'+' | b'-'] => return Err(IntErrorKind::InvalidDigit),
                     [b'+', rest @ ..] => (true, rest),
@@ -104,6 +105,7 @@ macro_rules! from_bytes_impl {
                     const LEADING_BYTE_OF_MAX: u8 =
                         (<$t>::MAX / (10 as $t).pow(MAX_DIGITS_LEN as u32 - 1)) as u8 + b'0';
 
+                    // 先頭の b'0' を除去するとオーバーフロー時に早期リターンできるが、エラーなので無視。
                     (digits.len() < MAX_DIGITS_LEN)
                         || (digits.len() == MAX_DIGITS_LEN && digits[0] < LEADING_BYTE_OF_MAX)
                 };
