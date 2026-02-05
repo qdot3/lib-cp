@@ -55,7 +55,7 @@ pub trait FromBytes: Sized {
 
 /// byte列を前から順にパースする。
 macro_rules! parse_digits {
-    ( $t:ty, $digits:ident, $mul:tt, $add:ident $(, $overflow:path )* ) => {{
+    ( $t:ty, $digits:expr, $mul:tt, $add:ident $(, $overflow:path )* ) => {{
         let (remainder, chunks) = $digits.as_rchunks::<8>();
         let mut n = 0 as $t;
 

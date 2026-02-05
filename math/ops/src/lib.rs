@@ -31,56 +31,50 @@ pub mod marker {
 
     /// 二項演算が可換である
     pub trait Commutative: SemiGroup {}
-
-    impl<T1: Idempotent, T2: Idempotent> Idempotent for (T1, T2) {}
-    impl<T1: Commutative, T2: Commutative> Commutative for (T1, T2) {}
 }
 
-// TODO: メタ変数式が安定化されたらタプルについても自動実装する。
-// 参考：<https://doc.rust-lang.org/src/core/tuple.rs.html>
-impl<T1: SemiGroup, T2: SemiGroup> SemiGroup for (T1, T2) {
-    type Set = (T1::Set, T2::Set);
+macro_rules! tuple_impl {
+    ( ($t0:tt, $lhs0:tt, $rhs0:tt, $x0:tt), $( ($t:tt, $lhs:tt, $rhs:tt, $x:tt) ),+ $(,)? ) => {
+        impl< $t0 :SemiGroup, $( $t : SemiGroup),+> SemiGroup for ( $t0, $( $t ),+)
+        {
+            type Set = (<$t0>::Set, $( <$t>::Set ),+);
 
-    fn op(lhs: Self::Set, rhs: Self::Set) -> Self::Set {
-        (T1::op(lhs.0, rhs.0), T2::op(lhs.1, rhs.1))
-    }
+            fn op(($lhs0, $( $lhs ),+): Self::Set, ($rhs0, $( $rhs ),+): Self::Set) -> Self::Set {
+                ( <$t0>::op($lhs0, $rhs0), $( <$t>::op($lhs, $rhs) ),+)
+            }
+        }
+
+        impl< $t0: Identity, $( $t : Identity ),+> Identity for ( $t0, $( $t ),+)
+        {
+            fn id() -> Self::Set {
+                (<$t0>::id(), $( <$t>::id() ),+)
+            }
+        }
+
+        impl< $t0: Inverse, $( $t : Inverse ),+> Inverse for ( $t0, $( $t ),+)
+        {
+            fn inv(($x0, $( $x ),+): Self::Set) -> Self::Set {
+                (<$t0>::inv($x0), $( <$t>::inv( $x ) ),+)
+            }
+        }
+
+        impl< $t0: marker::Commutative, $( $t : marker::Commutative ),+> marker::Commutative for ( $t0, $( $t ),+)
+        {}
+
+        impl< $t0: marker::Idempotent, $( $t : marker::Idempotent ),+> marker::Idempotent for ( $t0, $( $t ),+)
+        {}
+
+        tuple_impl!( $( ($t, $lhs, $rhs, $x) ),+ );
+    };
+    // termination
+    ( ($t0:tt, $lhs0:tt, $rhs0:tt, $x0:tt) ) => {}
 }
-
-impl<T1: SemiGroup, T2: SemiGroup, T3: SemiGroup> SemiGroup for (T1, T2, T3) {
-    type Set = (T1::Set, T2::Set, T3::Set);
-
-    fn op(lhs: Self::Set, rhs: Self::Set) -> Self::Set {
-        (
-            T1::op(lhs.0, rhs.0),
-            T2::op(lhs.1, rhs.1),
-            T3::op(lhs.2, rhs.2),
-        )
-    }
-}
-
-impl<T1: Identity, T2: Identity> Identity for (T1, T2) {
-    fn id() -> Self::Set {
-        (T1::id(), T2::id())
-    }
-}
-
-impl<T1: Identity, T2: Identity, T3: Identity> Identity for (T1, T2, T3) {
-    fn id() -> Self::Set {
-        (T1::id(), T2::id(), T3::id())
-    }
-}
-
-impl<T1: Inverse, T2: Inverse> Inverse for (T1, T2) {
-    fn inv(x: Self::Set) -> Self::Set {
-        (T1::inv(x.0), T2::inv(x.1))
-    }
-}
-
-impl<T1: Inverse, T2: Inverse, T3: Inverse> Inverse for (T1, T2, T3) {
-    fn inv(x: Self::Set) -> Self::Set {
-        (T1::inv(x.0), T2::inv(x.1), T3::inv(x.2))
-    }
-}
+tuple_impl!(
+    (T1, lhs1, rhs1, x1),
+    (T2, lhs2, rhs2, x2),
+    (T3, lhs3, rhs3, x3),
+    (T4, lhs4, rhs4, x4),
+);
 
 mod unit {
     use crate::marker::{Commutative, Idempotent};
