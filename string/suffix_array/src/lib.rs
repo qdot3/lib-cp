@@ -35,12 +35,6 @@ pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
         }
         str[..2].copy_from_slice(&name);
     }
-    #[cfg(test)]
-    if str.len() < 20 {
-        println!(">> all characters are renamed");
-        println!("str > {:?}", str);
-        println!(" sa > {:?}\n", sa);
-    }
 
     let str_to_ptr = |s: usize| {
         // if msb is 0, then RF-pointer for S-type. otherwise, LF-pointer for L-type
@@ -122,12 +116,6 @@ pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
             "LMS-characters are written"
         );
     }
-    #[cfg(test)]
-    if str.len() < 20 {
-        println!(">> all LMS-characters are sorted");
-        println!("str > {:?}", str);
-        println!(" sa > {:?}\n", sa);
-    }
 
     // preparation
     let induced_sort = |str: &mut [usize], sa: &mut [usize]| {
@@ -199,15 +187,8 @@ pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
                 "counters should be removed"
             );
         }
-        #[cfg(test)]
-        if str.len() < 20 {
-            println!(">> all L-suffixes are sorted by induced sort");
-            println!("str > {:?}", str);
-            println!(" sa > {:?}\n", sa);
-        }
 
         // step 2. remove LMS-substrings except for the sentinel
-        debug_assert_eq!(sa[0], str.len() - 1, "smallest suffix should be sentinel");
         sa.iter_mut().skip(1).for_each(|i| {
             // LMS-suffix is placed
             if str.get(*i).is_some_and(|s| is_s_type(*s)) {
@@ -221,13 +202,6 @@ pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
                 .all(|s| !is_s_type(*s)),
             "LMS-suffixes except for the sentinel should be removed"
         );
-        #[cfg(test)]
-        if str.len() < 20 {
-            assert!(sa.iter().all(|sa| *sa <= COUNT_ZERO));
-            println!(">> all LMS-substrings are removed");
-            println!("str > {:?}", str);
-            println!(" sa > {:?}\n", sa);
-        }
 
         // step 3. sort S-suffixes
         // count S-suffixes except for the sentinel
@@ -236,12 +210,6 @@ pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
                 sa[str_to_ptr(*s)] += 1
             }
         });
-        #[cfg(test)]
-        {
-            let hall = sa.iter().filter(|sa| *sa & COUNTER_FILTER != 0).count();
-            let count = sa.iter().map(|sa| sa.saturating_sub(COUNT_ZERO)).sum();
-            assert_eq!(hall, count);
-        }
         // put S-suffixes
         {
             let mut i = sa.len();
@@ -278,24 +246,13 @@ pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
                 }
             }
         }
-        #[cfg(test)]
-        if str.len() < 20 {
-            println!(">> all S-suffixes are sorted by induced sort");
-            println!("str > {:?}", str);
-            println!(" sa > {:?}\n", sa);
-        }
     };
 
     // step 3. induced sort LMS-substrings
     // all LMS-character are sorted
     let n_lms = {
+        // sort LMS-prefixes
         induced_sort(str, sa);
-        #[cfg(test)]
-        if str.len() < 20 {
-            println!(">> all LMS-prefixes are sorted");
-            println!("str > {:?}", str);
-            println!(" sa > {:?}\n", sa);
-        }
 
         // collect LMS-substrings to the tail
         let mut n_lms = 0;
@@ -315,12 +272,6 @@ pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
 
         n_lms
     };
-    #[cfg(test)]
-    if str.len() < 20 {
-        println!(">> all LMS-substrings are sorted");
-        println!("str > {:?}", str);
-        println!(" sa > {:?}\n", sa);
-    }
 
     // step 4: sort LMS-suffixes
     {
@@ -354,13 +305,6 @@ pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
                     n += 1
                 }
             }
-        }
-        #[cfg(test)]
-        if str.len() < 20 {
-            println!(">> subproblem is constructed");
-            println!("str > {:?}", str);
-            println!(" sa > {:?}\n", sa);
-            dbg!(n_lms, kind_lms);
         }
 
         // solve subproblem and sort LMS-suffixes
@@ -402,45 +346,27 @@ pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
                 lms.fill(COUNT_ZERO);
             }
         }
-        #[cfg(test)]
-        if str.len() < 20 {
-            println!(">> subproblem is solved");
-            println!("str > {:?}", str);
-            println!(" sa > {:?}\n", sa);
-            dbg!(n_lms, kind_lms);
+
+        // put LMS-suffixes to their bucket
+        {
+            let mut initial = COUNTER_FILTER;
+            let mut n = 0;
+            for i in (0..n_lms).rev() {
+                let j = std::mem::replace(&mut sa[i], COUNT_ZERO);
+                if str[j] == initial {
+                    n += 1
+                } else {
+                    n = 0
+                }
+                sa[str[j] - n] = j;
+
+                initial = str[j];
+            }
         }
     }
 
     // step 5. induce suffix array
-    // put LMS-suffixes to their bucket
-    {
-        let mut initial = COUNTER_FILTER;
-        let mut n = 0;
-        for i in (0..n_lms).rev() {
-            let j = std::mem::replace(&mut sa[i], COUNT_ZERO);
-            if str[j] == initial {
-                n += 1
-            } else {
-                n = 0
-            }
-            sa[str[j] - n] = j;
-
-            initial = str[j];
-        }
-    }
-    #[cfg(test)]
-    if str.len() < 20 {
-        println!(">> LMS-suffixes are sorted");
-        println!("str > {:?}", str);
-        println!(" sa > {:?}\n", sa);
-    }
     induced_sort(str, sa);
-    #[cfg(test)]
-    if str.len() < 20 {
-        println!(">> all suffixes are sorted");
-        println!("str > {:?}", str);
-        println!(" sa > {:?}\n", sa);
-    }
 }
 
 /// # Time Complexity
