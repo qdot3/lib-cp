@@ -1,5 +1,11 @@
-/// `str`は番兵`0`付きの文字列。
-/// また、`1 <= str[i] < str.len()`が成り立つ。
+/// Returns the suffix array.
+///
+/// The input will be modified and useless.
+///
+/// # Constraints
+///
+/// - `str.len() == sa.len()`
+/// - only the last character is `0` (sentinel)
 ///
 /// # Time Complexity
 ///
@@ -7,6 +13,7 @@
 pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
     assert_eq!(str.len(), sa.len());
     debug_assert!(str.iter().all(|s| *s < str.len()));
+    debug_assert_eq!(str[str.len() - 1], 0);
 
     // step 1. renaming
     // rename S(L)-type characters to the most-right(left) free position in their buckets.
@@ -369,9 +376,13 @@ pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
     induced_sort(str, sa);
 }
 
+/// # Constraints
+///
+/// `str.len() == sa.len()`
+///
 /// # Time Complexity
 ///
-/// *Θ*(*N*^2 log *N*)
+/// *O*(*N*^2 log *N*)
 pub fn suffix_array_brute_force<T: Ord>(str: &[T], sa: &mut [usize]) {
     assert_eq!(str.len(), sa.len());
 
