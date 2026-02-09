@@ -32,7 +32,7 @@ members = [
     "string/rolling_hash",
     "string/z_algorithm",
     "string/kmp",
-    "string/manacher",
+    "string/manacher", "string/suffix_array",
 ]
 
 [workspace.package]

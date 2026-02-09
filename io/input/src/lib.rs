@@ -151,7 +151,6 @@ mod tests {
     }
 }
 
-
 /// Parse single `Bytes`, `String`s, primitive integers, `Vec`tor or tuple.
 #[macro_export]
 macro_rules! parse {
@@ -189,7 +188,7 @@ macro_rules! parse {
             $crate::parse!(@source [$source] @rest ($($item)+))
         ).collect::<Vec<_>>()
     };
-    (@vec @source [$source:ident] @item [$item:ty ; $len:expr] @rest) => {
+    (@vec @source [$source:ident] @item [$item:tt ; $len:expr] @rest) => {
         (0..$len).into_iter().map(|_|
             $crate::parse!(@source [$source] @rest $item)
         ).collect::<Vec<_>>()
@@ -222,7 +221,7 @@ mod parse_single_value {
     #[test]
     fn vec() {
         let mut input = FastInput::new(&b"1 2"[..]);
-        let x = parse!(input >> [u8; 2], );
+        let x = parse!(input >> [u8; 2],);
         assert_eq!(x, vec![1, 2]);
     }
 
@@ -230,21 +229,21 @@ mod parse_single_value {
     fn vec_with_runtime_specified_len() {
         let mut input = FastInput::new(&b"3 1 2 3"[..]);
         let n = parse!(input >> u8);
-        let x = parse!(input >> [u8; n], );
+        let x = parse!(input >> [u8; n],);
         assert_eq!(x, vec![1, 2, 3]);
     }
 
     #[test]
     fn nested_vec1() {
         let mut input = FastInput::new(&b"1 2 3 4"[..]);
-        let x = parse!(input >> [[u8; 2]; 2], );
+        let x = parse!(input >> [[u8; 2]; 2],);
         assert_eq!(x, vec![vec![1, 2], vec![3, 4]]);
     }
 
     #[test]
     fn nested_vec2() {
         let mut input = FastInput::new(&b"1 2 3 4 5 6 7 8"[..]);
-        let x = parse!(input >> [[[u8; 2]; 2]; 2], );
+        let x = parse!(input >> [[[u8; 2]; 2]; 2],);
         assert_eq!(
             x,
             vec![vec![vec![1, 2], vec![3, 4]], vec![vec![5, 6], vec![7, 8]]]
@@ -268,7 +267,7 @@ mod parse_single_value {
     #[test]
     fn nested_tuple2() {
         let mut input = FastInput::new(&b"1 2 3"[..]);
-        let x = parse!(input >> ((u8, u8), u8, ),);
+        let x = parse!(input >> ((u8, u8), u8,),);
         assert_eq!(x, ((1, 2), 3));
     }
 
@@ -418,5 +417,13 @@ mod parses {
         assert_eq!(x, (1, 2));
         assert_eq!(y, 3);
         assert_eq!(z, vec![4, 5, 6])
+    }
+
+    #[test]
+    fn bytes() {
+        let mut input = FastInput::new(&b"1 23 456 "[..]);
+        bind!( input >> x: [Bytes; 3], );
+
+        assert_eq!(x, vec![b"1".to_vec(), b"23".to_vec(), b"456".to_vec()])
     }
 }
