@@ -37,6 +37,7 @@ pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
             name[i % 2] = if is_s_type {
                 sa[str[i]] - 1
             } else {
+                // we can use msb of usize as a type flag
                 sa[str[i] - 1] | 1usize.rotate_right(1)
             };
         }
@@ -54,7 +55,7 @@ pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
     };
 
     // step 2. sort LMS-characters
-    // since max heap capacity is isize::MAX, msb of usize can be used for flags.
+    // since max heap capacity is isize::MAX, msb of usize can be used for a counter flag.
     // these constants are used for number of appearance of LMS-characters for each buckets
     const COUNTER_FILTER: usize = 1usize.rotate_right(1);
     // counters never overflow since `COUNT_ZERO + isize::MAX = usize::MAX`
@@ -416,7 +417,7 @@ mod tests {
     #[test]
     fn random_compact() {
         let mut rng = rand::rng();
-        for n in 400..600 {
+        for n in 300..600 {
             let mut str = Vec::from_iter((1..n).map(|_| rng.random_range(1..n)));
             str.push(0);
             assert(&mut str);
