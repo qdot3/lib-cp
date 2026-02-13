@@ -289,7 +289,7 @@ LMS文字についてソートされていればよいので、バケット内�
 
 #algorithm[
   ```rust
-  fn sort_lms_char(text: &mut [usize], sa: &mut [usize]) {
+  fn sort_lms_char(text: &[usize], sa: &mut [usize]) {
     // LMS文字を数える。
     sa.fill(0);
     text.windows(2).for_each(|s| {
@@ -353,10 +353,10 @@ LMS文字についてソートされていればよいので、バケット内�
 誘導ソートはこのアルゴリズムの肝であり、ソート済みのLMS文字からLMS部分文字列の順序を導き、ソートされたLMS型接尾辞から接尾辞配列を誘導する。
 
 #algorithm("誘導ソート")[
-  ```rs
-  fn induced_sort(text: &mut [usize], sa: &mut [usize]) {
+  ```rust
+  fn induced_sort(text: &[usize], sa: &mut [usize]) {
     // LMS型からL型を誘導する
-    sort_l_types(text: &mut [usize], sa: &mut [usize]);
+    sort_l_types(text: &[usize], sa: &mut [usize]);
     // LMS文字を除去する。番兵は誘導できないので、残しておく。
     sa.iter_mut().skip(1).for_each(|i| {
       // L型以外の文字は除去してよい。
@@ -365,11 +365,11 @@ LMS文字についてソートされていればよいので、バケット内�
       }
     });
     // L型からS型を誘導する
-    sort_s_types(text: &mut [usize], sa: &mut [usize]);
+    sort_s_types(text: &[usize], sa: &mut [usize]);
   }
 
   // S型の誘導ソートもほとんど同じだが、SAを降順に走査する。カウンターは残らないので、あとから削除する必要はない。
-  fn sort_l_types(text: &mut [usize], sa: &mut [usize]) {
+  fn sort_l_types(text: &[usize], sa: &mut [usize]) {
     // LMS文字をソートするときとほとんど同じ。違いはSではなくSAを昇順に走査すること。
 
     // L型文字の出現数を数える
@@ -432,8 +432,104 @@ LMS文字についてソートされていればよいので、バケット内�
 
 === LMS部分文字列のソート
 
+LMS文字はソート済みなので、LMS部分文字列をソートできる。
+部分問題を構築するメモリを確保するために、LMS型の文字をSAの末尾に集める。
+LMS文字列を改名したら、Sでの登場順に並び替え、部分問題を再帰的に解く。
+
+LMS文字は高々 $floor(abs(S)/2)$ 個しかないので、改名後の文字はSA[SA[i]/2] に書き込めばよい。
+部分問題はSAの先頭に詰めて書き込まれ、その接尾辞配列は末尾に書き込まれる。
+
+#algorithm[
+  ```rust
+  /// LMS部分文字列を改名して、新しい text と sa を返す。これを再帰的に解く。
+  fn sort_lms_substrings(text: &[usize], sa: &mut [usize]) -> (&mut [usize], &mut [usize]) {
+    induced_sort(text, &mut sa);
+    // LMS文字を末尾に集める。
+    let n_lms = {
+      let mut n_lms = 0;
+      for i in (0..sa.len()).rev() {
+        // text[sa[i]]はLMS型
+        if sa[i] > 0 && is_s_type(text[sa[i]]) && !is_s_type(text[sa[i]-1]) {
+          n_lms += 1;
+          sa[sa.len()-n_lms] = sa[i]
+        }
+      }
+      // 不要なノードは初期化
+      let r = sa.len()-n_lms;
+      sa[..r].fill(COUNT_ZERO);
+
+      n_lms
+    };
+    // LMS部分文字列を改名する。
+    let kind_lms = {
+      let mut kind_lms = 0;
+      let i = sa.len()-n_lms;
+      // これは番兵
+      sa[sa[i]/2] = 0 // text[sa[i]]
+      for i in i+1..sa.len() {
+        // LMS部分文字列の長さを求める
+        let nl = text[sa[i-1]..].windows(2).take_while(|s| {
+                    // 次のLMS型まで進む
+                    is_s_type(s[0]) || !is_s_type(s[1])
+                  }).count();
+        let nr = text[sa[i]..].windows(2).take_while(|s| {
+                    // 次のLMS型まで進む
+                    is_s_type(s[0]) || !is_s_type(s[1])
+                  }).count();
+        // 一致しないなら次に大きな文字を割り当てる。
+        if text[sa[i-1]..sa[i-1]+nl] != text[sa[i]..sa[i]+nr] {
+          kind_lms += 1;
+        }
+        sa[sa[i]/2] = kind_lms
+      }
+
+      kind_lms
+    };
+    // 改名したLMS部分文字列を前に集める。これはtextに現れた順になっている。
+    {
+      let mut n = 0;
+      for i in 0..sa.len()-n_lms {
+        if sa[i] & COUNTER_FLAG == 0 {
+          sa[n] = std::mem::replace(&mut sa[i], COUNT_ZERO);
+          n += 1;
+        }
+      }
+    }
+
+    let (pre, sa) = sa.split_at_mut(sa.len()-n_lms);
+    let (text, _) = sa.split_at_mut(n_lms);
+    (text, sa)
+  }
+  ```
+]
+
+=== LMS接尾辞のソート
+
+LMS部分文字列の接尾辞配列が得られたので、LMS接尾辞がソートできた。
+
 #inline-note[
   アルゴリズムの解説
+]
+
+=== まとめ
+
+アルゴリズムの全体は下記の通り。
+
+#algorithm[
+  ```rust
+  fn suffix_array(text: &mut [usize], sa: &mut [usize]) {
+    todo!("base case");
+
+    rename(&mut text, &mut sa);
+    sort_lms_char(&text, &mut sa);
+    {
+      let (text, sa) = sort_lms_substrings(&text, &mut sa);
+      suffix_array(&mut text, &mut sa);
+      todo!("sort and put lms-suffixes")
+    }
+    induced_sort(&text, &mut sa);
+  }
+  ```
 ]
 
 == 非再帰アルゴリズム
@@ -453,6 +549,10 @@ LMS文字についてソートされていればよいので、バケット内�
 ASCII文字やUnicode文字など、コンピューターで利用できる文字の種類は固定なので、接尾辞配列を線形時間で計算できる。
 
 = LCP配列 <chap:lcp>
+
+#inline-note[
+  SA上で差分計算する。RMQで定数時間クエリ。
+]
 
 = 参考文献
 
