@@ -47,4 +47,12 @@ impl<const MOD: u32> Factorial<MOD> {
             Mint::new(0)
         }
     }
+
+    pub fn fact(&self, n: usize) -> Mint<MOD> {
+        self.fact[n]
+    }
+
+    pub fn inv_fact(&self, n: usize) -> Mint<MOD> {
+        self.inv_fact[n]
+    }
 }

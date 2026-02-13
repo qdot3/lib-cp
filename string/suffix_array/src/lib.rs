@@ -12,8 +12,16 @@
 /// *Θ*(*N*)
 pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
     assert_eq!(str.len(), sa.len());
-    debug_assert!(str.iter().all(|s| *s < str.len()));
-    debug_assert_eq!(str[str.len() - 1], 0);
+    debug_assert!(
+        str.iter().rev().skip(1).all(|s| 1 <= *s && *s < str.len()),
+        "all characters except for the sentinel should be within [1, {})",
+        str.len()
+    );
+    debug_assert_eq!(
+        str[str.len() - 1],
+        0,
+        "`str` should end with the sentinel 0"
+    );
 
     // step 1. renaming
     // rename S(L)-type characters to the most-right(left) free position in their buckets.
@@ -423,4 +431,24 @@ mod tests {
             assert(&mut str);
         }
     }
+}
+
+pub fn suffix_array_int(str: &[usize]) -> Vec<usize> {
+    let (ns, nl, d) = {
+        // sentinel is S-type
+        let mut is_s_type = true;
+        let mut ns = 1;
+        let mut max_s = 0;
+        str.windows(2).rev().for_each(|s| {
+            if s[0] != s[1] {
+                is_s_type = s[0] < s[1]
+            }
+            ns += is_s_type as usize;
+            max_s = max_s.max(s[1]);
+        });
+        (ns, str.len() - ns, max_s.div_ceil(str.len()))
+    };
+
+    let induced_sort_s = |sa: &mut [usize]| {};
+    todo!()
 }

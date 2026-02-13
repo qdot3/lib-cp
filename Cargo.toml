@@ -34,7 +34,7 @@ members = [
     "string/kmp",
     "string/manacher",
     "string/suffix_array",
-    "string/lcp",
+    "string/lcp", "string/suffix_automaton",
 ]
 
 [workspace.package]

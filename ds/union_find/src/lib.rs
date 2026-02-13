@@ -115,4 +115,11 @@ where
     pub fn size(&mut self, x: usize) -> usize {
         -self.parent_or_size[self.find(x)] as usize
     }
+
+    pub fn leaders(&self) -> impl Iterator<Item = (&i32, &T::Set)> {
+        self.parent_or_size
+            .iter()
+            .zip(self.value.iter())
+            .filter(|(i, _)| i.is_negative())
+    }
 }
