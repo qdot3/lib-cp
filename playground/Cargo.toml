@@ -35,6 +35,8 @@ lazy_segtree = { workspace = true }
 union_find = { workspace = true }
 union_find_with_potential = { workspace = true }
 
+rectangle = { workspace = true }
+
 factorial = { workspace = true }
 floor_sum = { workspace = true }
 fps = { workspace = true }

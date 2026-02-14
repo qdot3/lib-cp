@@ -34,7 +34,9 @@ members = [
     "string/kmp",
     "string/manacher",
     "string/suffix_array",
-    "string/lcp", "string/suffix_automaton",
+    "string/lcp",
+    "string/suffix_automaton",
+    "ds/rectangle", "math/min_prime_factor",
 ]
 
 [workspace.package]
@@ -61,6 +63,7 @@ rmq = { path = "./ds/rmq" }
 sparse_table = { path = "./ds/sparse_table" }
 union_find = { path = "./ds/union_find" }
 union_find_with_potential = { path = "ds/union_find_with_potential" }
+rectangle = { path = "./ds/rectangle" }
 
 convex_hull = { path = "./geo/convex_hull" }
 point = { path = "./geo/point" }
