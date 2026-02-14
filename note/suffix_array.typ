@@ -352,7 +352,7 @@ LMS文字についてソートされていればよいので、バケット内�
 @thm:induced-sort-v1 の証明で用いたアルゴリズムを誘導ソートという。
 誘導ソートはこのアルゴリズムの肝であり、ソート済みのLMS文字からLMS部分文字列の順序を導き、ソートされたLMS型接尾辞から接尾辞配列を誘導する。
 
-#algorithm("誘導ソート")[
+#algorithm("Induced-Sort")[
   ```rust
   fn induced_sort(text: &[usize], sa: &mut [usize]) {
     // LMS型からL型を誘導する
@@ -506,21 +506,58 @@ LMS文字は高々 $floor(abs(S)/2)$ 個しかないので、改名後の文字�
 === LMS接尾辞のソート
 
 LMS部分文字列の接尾辞配列が得られたので、LMS接尾辞がソートできた。
+ここで、部分問題がSAの前半に、その接尾辞配列がSAの後半に詰めて書き込まれているとする。
+接尾辞配列を正しいバケットに格納するために、SAの後半にソートされたLMS型接尾辞を詰める。
+その語、昇順にバケットに書き込む。
 
-#inline-note[
-  アルゴリズムの解説
+#algorithm[
+  ```rust
+  fn sort_lms_suffixes(text: &[usize], sa: &mut [usize]) {
+    // 部分問題をLMS型接尾辞で登場順に上書きする
+    let mut n = 0;
+    text.windows(2).enumerate().for_each(|(i, s)| {
+      if !is_s_type(s[0]) && is_s_type(s[1]) {
+        sa[n] = i+1;
+        n += 1;
+      }
+    });
+    // 部分問題の解から、LMS型接尾辞をソートする。
+    {
+      let l = sa.len()-n;
+      for i in l..sa.len() {
+        sa[i] = sa[sa[i]];
+      }
+      sa[..n].fill(COUNT_ZERO);
+    }
+    // LMS型接尾辞をバケットに書き込む
+    {
+      n = 0;
+      // 番兵は最小の接尾辞
+      let mut s = 0;
+      sa[0] = sa[l]
+      for i in l+1..sa.len() {
+        // バケット内でのオフセット
+        if text[sa[i]] == s { n += 1 } else { n = 0 };
+        s = text[sa[i]];
+        // 同じ場所に書き込むことがあるので、初期化してから上書きする。
+        sa[str_to_ptr(s)-n] = std::mem::replace(&mut sa[i], COUNT_ZERO);
+      }
+    }
+  }
+  ```
 ]
 
 === まとめ
 
 アルゴリズムの全体は下記の通り。
-参照は長さをもつので、実は $O(log |S|)$ の作業メモリを使っている。
+参照は長さをもつスマートポインターなので、実は $O(log |S|)$ の作業メモリを使っている。
 作業メモリを $O(1)$ に抑えるためには生ポインターを使う必要がある。
 これは unsafe rust の領分なので、本稿では解説しない。
 
-#algorithm[
+#algorithm("Create-Suffix-Array")[
   ```rust
   fn suffix_array(text: &mut [usize], sa: &mut [usize]) {
+    assert_eq!(text.len(), sa.len());
     todo!("base case");
 
     rename(&mut text, &mut sa);
@@ -528,8 +565,8 @@ LMS部分文字列の接尾辞配列が得られたので、LMS接尾辞がソ�
     {
       let (text, sa) = sort_lms_substrings(&text, &mut sa);
       suffix_array(&mut text, &mut sa);
-      todo!("sort and put lms-suffixes")
     }
+    sort_lms_suffixes(&text, &mut sa);
     induced_sort(&text, &mut sa);
   }
   ```
@@ -539,7 +576,6 @@ LMS部分文字列の接尾辞配列が得られたので、LMS接尾辞がソ�
 
 紹介したアルゴリズムの再帰木は鎖型になっている。
 行きがけと帰りがけでループを２つ用意すると非再帰で書けるはずである。
-ただし、$O(log |S|)$ の作業メモリが必要かもしれない。
 
 #inline-note[
   借用規則を守るために ```rust slice.split_at_mut()``` を多用することになる。
@@ -551,7 +587,7 @@ LMS部分文字列の接尾辞配列が得られたので、LMS接尾辞がソ�
 本稿では座標圧縮を仮定したが、文字列の種類が $O(|S|)$ であれば、線形時間で接尾辞配列をもとめるアルゴリズムが存在する。
 ASCII文字やUnicode文字など、コンピューターで利用できる文字の種類は固定なので、接尾辞配列を線形時間で計算できる。
 
-= LCP配列 <chap:lcp>
+= LCP配列
 
 #inline-note[
   SA上で差分計算する。RMQで定数時間クエリ。
