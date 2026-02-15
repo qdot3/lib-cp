@@ -587,15 +587,103 @@ LMS部分文字列の接尾辞配列が得られたので、LMS接尾辞がソ�
 本稿では座標圧縮を仮定したが、文字列の種類が $O(|S|)$ であれば、線形時間で接尾辞配列をもとめるアルゴリズムが存在する。
 ASCII文字やUnicode文字など、コンピューターで利用できる文字の種類は固定なので、接尾辞配列を線形時間で計算できる。
 
-= LCP配列
+== ```rust String```型
 
 #inline-note[
-  SA上で差分計算する。RMQで定数時間クエリ。
+  バイト列とみなして接尾辞配列を計算し、入力を復元する。
+  UTF-8の規格から、エントリーポイントかどうかは```rust u8.leading_ones()```で判別できる。
 ]
+
+= LCP配列
+
+文字列Sの２つの部分文字列の最長共通接頭辞（Longest Common Prefix, LCP）を線形時間で構築するアルゴリズムを紹介する。
+部分文字列は接尾辞の接頭辞なので、対応する２つの接頭辞のLCPを計算出来ればよい。
+#footnote[
+  部分文字列S[i..i+ni]とS[j..j+nj]のLCPは ```rust lcp(S[i..], S[j..]).min(ni).min(nj)``` とかける。
+]
+接尾辞配列がソート済みであることから次の事実を得る。
+
+#lemma[
+  接尾辞S[SA[i]..]とのLCPが最大の接尾辞はS[SA[i]$plus.minus$1..]の少なくとも一方である。
+]
+#proof[
+  接尾辞がソートされているから。
+]
+#corollary[
+  ２つの接尾辞S[SA[i]..]とS[SA[j]..]を考える。
+  ただし、$"SA[i]" < "SA[j]"$とする。
+  次の関係が成り立つ。
+  $
+    "lcp"("S[SA[i]..]", "S[SA[j]..]")
+    = min_("SA[i]" <= k < "SA[j]") "lcp"("SA[k..]", "SA[k+1..]")
+  $
+] <thm:sa-lcp>
+
+@thm:sa-lcp より接尾辞配列で隣り合う２つの接尾辞のLCPを計算し、それからRMQを構築すればよい。
+RMQの実装は省略するが、構築 $O(N)$でクエリ $O(1)$ のものが存在する。
+また、次の事実が成り立つ。
+
+#lemma[
+  ２つの接尾辞S[SA[i]..]とS[SA[i+1]..]のLCPの長さを $L$ とする。
+  S[SA[i]+1..]とS[SA[i+1]+1..]のLCPの長さは $L-1$ 以上である。
+]
+
+この性質を使ってLCPを高速に計算するためには接尾辞配列ではなく文字列Sを正順で操作するとよい。
+
+#algorithm[
+  ```rust
+  /// 返り値を lcp とすると、lcp[i] は接尾辞 text[i..] とその次に小さな接尾辞のLCPを表す。
+  fn lcp_array(text: &[usize], sa: &[usize]) -> Vec<usize> {
+    let mut lcp = Vec::with_capacity(sa.len());
+    {
+      let lcp = lcp.spare_capacity_mut();
+      (0..sa.len()).for_each(|i| { lcp[sa[i]].write(i); });
+    }
+    // sa の逆関数で初期化。text を正順に走査しつつ、sa での順序を求めたい。
+    unsafe { lcp.set_len(sa.len()) };
+
+    let mut l = 0;
+    for i in 0..sa.len() {
+      if lcp[i] > 0 {
+        // １つ小さな接尾辞。
+        let j = sa[lcp[i]-1];
+        // 少なくとも一方は Some(*)
+        while text.get(i+l) == text.get(j+l) { l += 1 };
+        // lcp[i] はもう不要なので、LCPの長さを書き込む
+        lcp[i] = l;
+        l = l.saturating_sub(1);
+      }
+    }
+  }
+  ```
+] <algo:lcp-array>
+
+#theorem[
+  LCP配列を線形時間で構築できる。
+]
+#proof[
+  接尾辞配列は線形時間でっ構築できる。
+  @algo:lcp-array より、接尾辞配列があれば線形時間でLCP配列を計算できる。
+  なぜなら、$l$ は高々 $|S|$ であり、高々 $|S|$ 回デクリメントされるので、１７行目の while ループは高々 $2|S|$ 回実行される。
+]
+
+\
+LCP配列を接尾辞のソート順に並べ替えるためには、SA[i]とLCP[SA[i]]をスワップすればよい。
+このとき、SAは接尾辞のソート順のLCP配列となり、LCPは接尾辞配列の逆関数になっている。
 
 = 参考文献
 
-== 接尾辞配列の線形時間アルゴリズム
+== 接尾辞配列の線形時間構築
 
-- LI, Zhize; LI, Jian; HUO, Hongwei. Optimal in-place suffix sorting. Information and Computation, 2022, 285: 104818. #link("https://doi.org/10.1016/j.ic.2021.104818")
-- NONG, Ge; ZHANG, Sen; CHAN, Wai Hong. Two efficient algorithms for linear time suffix array construction. IEEE transactions on computers, 2010, 60.10: 1471-1484. #link("https://doi.org/10.1109/TC.2010.188")
+- #link(
+    "https://doi.org/10.1016/j.ic.2021.104818",
+  )[LI, Zhize; LI, Jian; HUO, Hongwei. Optimal in-place suffix sorting. Information and Computation, 2022, 285: 104818. ]
+- #link(
+    "https://doi.org/10.1109/TC.2010.188",
+  )[NONG, Ge; ZHANG, Sen; CHAN, Wai Hong. Two efficient algorithms for linear time suffix array construction. IEEE transactions on computers, 2010, 60.10: 1471-1484. ]
+
+== LCP配列の線形時間構築
+
+- #link(
+    "https://doi.org/10.1007/3-540-48194-X_17",
+  )[KASAI, Toru, et al. Linear-time longest-common-prefix computation in suffix arrays and its applications. In: Annual Symposium on Combinatorial Pattern Matching. Berlin, Heidelberg: Springer Berlin Heidelberg, 2001. p. 181-192. ]
