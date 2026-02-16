@@ -3,6 +3,7 @@ pub struct LCP {}
 impl LCP {
     /// 接尾辞配列からLCP配列を計算する。
     /// 返り値を`lcp`とかくと、`lcp[i]`は`text[i..]`とその次に小さな接尾辞のLCPの長さになっている。
+    /// とくに、`lcp[0] = 0`である。
     ///
     /// # Complexity
     ///
@@ -22,6 +23,7 @@ impl LCP {
         // LCPの長さの下限
         let mut l = 0;
         for i in 0..sa.len() {
+            // 次に小さな接尾辞が存在しないので、LCPは 0 でよい。
             if lcp[i] > 0 {
                 let j = sa[lcp[i] - 1];
                 // 少なくとも一方は Some を返す
