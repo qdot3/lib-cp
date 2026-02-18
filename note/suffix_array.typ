@@ -87,8 +87,11 @@ Rust言語において文字は ```rust T: Ord``` と抽象化できる。
 文字列を座標圧縮することを考える。
 このとき、```rust T = usize``` である。
 後述するように、文字列 ```rust &[usize]``` の接尾辞配列は $Theta(|S|)$ で求めることができる。
-座標圧縮の計算量は $Theta(|S| log |S|)$ であるから、これによって最悪計算量が悪化することはない。
-以下では、文字は ```rust usize``` であるとする。
+座標圧縮の計算量は $Theta(|S|)$ であるから、これによって最悪計算量が悪化することはない。
+#footnote[
+  基数ソートによる。
+]
+本稿では、文字は ```rust usize``` であるとする。
 #footnote[
   より小さな数値型を用いても良いが、アルゴリズムが複雑になってしまう。
   本稿で紹介する実装では ```rust Vec<T>``` の最大容量が ```rust isize::MAX``` であることを利用した最適化を施しており、オリジナルと比べてアルゴリズムが単純になった。
@@ -693,7 +696,7 @@ LCP配列を接尾辞の昇順に並べ替えるためには、SA[i]とLCP[SA[i]
 ]
 
 @lemma:suffix-tree-size は根を含まない。
-接尾辞配列を頭文字で二分探索すれば部分木の根が得られる。
+接尾辞配列を頭文字で二分探索すれば部分木の根を得る。
 
 #theorem[
   深さ優先探索の計算量は $Theta(|S|)$ である。
@@ -729,3 +732,4 @@ LCP配列を接尾辞の昇順に並べ替えるためには、SA[i]とLCP[SA[i]
 - #link(
     "https://doi.org/10.1007/3-540-48194-X_17",
   )[KASAI, Toru, et al. Linear-time longest-common-prefix computation in suffix arrays and its applications. In: Annual Symposium on Combinatorial Pattern Matching. Berlin, Heidelberg: Springer Berlin Heidelberg, 2001. p. 181-192. ]
+

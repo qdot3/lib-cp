@@ -5,6 +5,7 @@ const COUNTER_FILTER: usize = 1usize.rotate_right(1);
 const COUNT_ZERO: usize = COUNTER_FILTER;
 const COUNT_ONE: usize = COUNT_ZERO + 1;
 
+#[inline]
 fn rename(str: &mut [usize], sa: &mut [usize]) {
     debug_assert_eq!(str.len(), sa.len());
 
@@ -36,17 +37,20 @@ fn rename(str: &mut [usize], sa: &mut [usize]) {
     }
 }
 
+#[inline]
 fn str_to_ptr(s: usize) -> usize {
     // if msb is 0, then RF-pointer for S-type. otherwise, LF-pointer for L-type
     const MASK: usize = !0 >> 1;
     s & MASK
 }
 
+#[inline]
 fn is_s_type(s: usize) -> bool {
     const MASK: usize = !0 >> 1;
     s & !MASK == 0
 }
 
+#[inline]
 fn sort_lms_chars(str: &[usize], sa: &mut [usize]) {
     // count LMS-characters
     sa.fill(COUNT_ZERO);
@@ -100,6 +104,7 @@ fn sort_lms_chars(str: &[usize], sa: &mut [usize]) {
 }
 
 /// ソート済みのLMS型からL型をソートする
+#[inline]
 fn induce_l_type(str: &[usize], sa: &mut [usize], remove_counter: bool) {
     // count L-types
     str.iter().for_each(|s| {
@@ -156,6 +161,8 @@ fn induce_l_type(str: &[usize], sa: &mut [usize], remove_counter: bool) {
     }
 }
 
+/// ソート済みのLML型からS型をソートする
+#[inline]
 fn induce_s_type(str: &[usize], sa: &mut [usize], remove_counter: bool) {
     // count S-suffixes except for the sentinel
     str.iter().rev().skip(1).for_each(|s| {
@@ -199,11 +206,12 @@ fn induce_s_type(str: &[usize], sa: &mut [usize], remove_counter: bool) {
     }
 
     if remove_counter {
-        todo!("")
+        todo!()
     }
 }
 
-fn induced_sort(str: &[usize], sa: &mut [usize]) {
+#[inline]
+fn induced_sort_lms(str: &[usize], sa: &mut [usize]) {
     induce_l_type(str, sa, true);
 
     // remove LMS-substrings except for the sentinel
@@ -218,6 +226,7 @@ fn induced_sort(str: &[usize], sa: &mut [usize]) {
 }
 
 /// ソート済みのLMS文字からLMS部分文字列をソートする
+#[inline]
 fn sort_lms_substrings<'a>(
     str: &[usize],
     sa: &'a mut [usize],
@@ -225,7 +234,7 @@ fn sort_lms_substrings<'a>(
     // all LMS-character are sorted
     let n_lms = {
         // sort LMS-prefixes
-        induced_sort(str, sa);
+        induced_sort_lms(str, sa);
 
         // collect LMS-substrings to the tail
         let mut n_lms = 0;
@@ -282,6 +291,7 @@ fn sort_lms_substrings<'a>(
     (str, sa)
 }
 
+#[inline]
 fn sort_lms_suffixes(str: &[usize], sa: &mut [usize]) {
     // 部分問題をLMS型接尾辞で登場順に上書きする
     let mut n = 0;
@@ -332,7 +342,7 @@ fn sort_lms_suffixes(str: &[usize], sa: &mut [usize]) {
 /// # Time Complexity
 ///
 /// *Θ*(*N*)
-pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
+pub fn suffix_array(str: &mut [usize], sa: &mut [usize]) {
     assert_eq!(str.len(), sa.len());
     debug_assert!(
         str.iter().rev().skip(1).all(|s| 1 <= *s && *s < str.len()),
@@ -354,10 +364,10 @@ pub fn suffix_array_compact(str: &mut [usize], sa: &mut [usize]) {
     sort_lms_chars(str, sa);
     {
         let (str, sa) = sort_lms_substrings(str, sa);
-        suffix_array_compact(str, sa);
+        suffix_array(str, sa);
     }
     sort_lms_suffixes(str, sa);
-    induced_sort(str, sa);
+    induced_sort_lms(str, sa);
 }
 
 /// # Constraints
@@ -375,7 +385,7 @@ pub fn suffix_array_brute_force<T: Ord>(str: &[T], sa: &mut [usize]) {
 }
 
 #[cfg(test)]
-mod tests {
+mod compact {
     use rand::Rng;
 
     use super::*;
@@ -385,7 +395,7 @@ mod tests {
         suffix_array_brute_force(&str, &mut sa2);
 
         let mut sa1 = vec![0; str.len()];
-        suffix_array_compact(str, &mut sa1);
+        suffix_array(str, &mut sa1);
 
         assert_eq!(sa1, sa2)
     }
@@ -398,7 +408,7 @@ mod tests {
     }
 
     #[test]
-    fn random_compact() {
+    fn random() {
         let mut rng = rand::rng();
         for n in 300..600 {
             let mut str = Vec::from_iter((1..n).map(|_| rng.random_range(1..n)));
@@ -408,22 +418,3 @@ mod tests {
     }
 }
 
-pub fn suffix_array_int(str: &[usize]) -> Vec<usize> {
-    let (ns, nl, d) = {
-        // sentinel is S-type
-        let mut is_s_type = true;
-        let mut ns = 1;
-        let mut max_s = 0;
-        str.windows(2).rev().for_each(|s| {
-            if s[0] != s[1] {
-                is_s_type = s[0] < s[1]
-            }
-            ns += is_s_type as usize;
-            max_s = max_s.max(s[1]);
-        });
-        (ns, str.len() - ns, max_s.div_ceil(str.len()))
-    };
-
-    let induced_sort_s = |sa: &mut [usize]| {};
-    todo!()
-}

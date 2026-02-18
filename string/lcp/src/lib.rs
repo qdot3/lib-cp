@@ -6,7 +6,7 @@
 ///
 /// - *Θ*(*N*) in time
 /// - *O*(1) in working space
-pub fn lcp_array(text: &[usize], sa: &[usize]) -> Vec<usize> {
+pub fn lcp_array<T: Eq>(text: &[T], sa: &[usize]) -> Vec<usize> {
     let mut lcp = Vec::with_capacity(sa.len());
     {
         let lcp = lcp.spare_capacity_mut();

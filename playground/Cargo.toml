@@ -42,6 +42,7 @@ floor_sum = { workspace = true }
 fps = { workspace = true }
 ops = { workspace = true }
 mint = { workspace = true }
+min_prime_factor={workspace = true}
 
 rolling_hash = { workspace = true }
 z_algorithm = { workspace = true }

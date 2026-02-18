@@ -1,0 +1,17 @@
+[package]
+name = "radix_sort"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[dependencies]
+
+[dev-dependencies]
+criterion = { version = "0.8", features = ["html_reports"] }
+rand.workspace = true
+
+
+[[bench]]
+name = "sort_integer"
+harness = false

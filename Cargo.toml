@@ -5,9 +5,12 @@ resolver = "2"
 
 members = [
     # cargo-equip (で利用されている cargo-metadata) で必要
+    "algo/compress",
+    "algo/radix_sort",
     "ds/disjoint_sparse_table",
     "ds/fenwick",
     "ds/lazy_segtree",
+    "ds/rectangle",
     "ds/rmq",
     "ds/sparse_table",
     "ds/union_find",
@@ -26,6 +29,7 @@ members = [
     "math/floor_sum",
     "math/fps",
     "math/mint",
+    "math/min_prime_factor",
     "math/ops",
     "playground",
     "small/sorted_array",
@@ -35,8 +39,7 @@ members = [
     "string/manacher",
     "string/suffix_array",
     "string/lcp",
-    "string/suffix_automaton",
-    "ds/rectangle", "math/min_prime_factor",
+    "string/suffix_tree",
 ]
 
 [workspace.package]
@@ -56,6 +59,9 @@ thiserror = "2.0.16"
 
 # original crates
 # `crate = { workspace = true }`の形式で利用する。フォルダ構造の変更しても、ここだけ直せばよい。
+compress = { path = "./algo/compress" }
+radix_sort = { path = "./algo/radix_sort" }
+
 disjoint_sparse_table = { path = "./ds/disjoint_sparse_table" }
 fenwick = { path = "./ds/fenwick" }
 lazy_segtree = { path = "./ds/lazy_segtree" }
@@ -79,6 +85,7 @@ factorial = { path = "./math/factorial" }
 floor_sum = { path = "./math/floor_sum" }
 fps = { path = "./math/fps" }
 mint = { path = "./math/mint" }
+min_prime_factor = { path = "./math/min_prime_factor" }
 ops = { path = "./math/ops" }
 
 sorted_array = { path = "./small/sorted_array" }
