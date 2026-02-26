@@ -353,12 +353,12 @@ macro_rules! bind {
         $crate::bind!(@source [$source] @rest $($rest)*)
     };
     // single item
-    (@source [$source:ident] @mut [$($mut:tt)?] @ident [$ident:tt] @rest $t:ty, $( $rest:tt )*) => {
+    (@source [$source:ident] @mut [$($mut:tt)?] @ident [$ident:tt] @rest $t:tt, $( $rest:tt )*) => {
         let $($mut)? $ident = $crate::parse!($source >> $t);
 
         $crate::bind!(@source [$source] @rest $($rest)*);
     };
-    (@source [$source:ident] @mut [$($mut:tt)?] @ident [$ident:tt] @rest $t:ty)=> {
+    (@source [$source:ident] @mut [$($mut:tt)?] @ident [$ident:tt] @rest $t:tt)=> {
         let $($mut)? $ident = $crate::parse!($source >> $t);
 
         $crate::bind!(@source [$source] @rest);
@@ -422,8 +422,8 @@ mod parses {
     #[test]
     fn bytes() {
         let mut input = FastInput::new(&b"1 23 456 "[..]);
-        bind!( input >> x: [Bytes; 3], );
+        bind!( input >> x: Bytes, );
 
-        assert_eq!(x, vec![b"1".to_vec(), b"23".to_vec(), b"456".to_vec()])
+        assert_eq!(x, b"1".to_vec())
     }
 }

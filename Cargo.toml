@@ -6,7 +6,6 @@ resolver = "2"
 members = [
     # cargo-equip (で利用されている cargo-metadata) で必要
     "algo/compress",
-    "algo/radix_sort",
     "ds/disjoint_sparse_table",
     "ds/fenwick",
     "ds/lazy_segtree",
@@ -32,7 +31,6 @@ members = [
     "math/min_prime_factor",
     "math/ops",
     "playground",
-    "small/sorted_array",
     "string/rolling_hash",
     "string/z_algorithm",
     "string/kmp",
@@ -40,6 +38,7 @@ members = [
     "string/suffix_array",
     "string/lcp",
     "string/suffix_tree",
+    "ds/segtree",
 ]
 
 [workspace.package]
@@ -60,11 +59,11 @@ thiserror = "2.0.16"
 # original crates
 # `crate = { workspace = true }`の形式で利用する。フォルダ構造の変更しても、ここだけ直せばよい。
 compress = { path = "./algo/compress" }
-radix_sort = { path = "./algo/radix_sort" }
 
 disjoint_sparse_table = { path = "./ds/disjoint_sparse_table" }
 fenwick = { path = "./ds/fenwick" }
 lazy_segtree = { path = "./ds/lazy_segtree" }
+segtree = { path = "./ds/segtree" }
 rmq = { path = "./ds/rmq" }
 sparse_table = { path = "./ds/sparse_table" }
 union_find = { path = "./ds/union_find" }
@@ -87,8 +86,6 @@ fps = { path = "./math/fps" }
 mint = { path = "./math/mint" }
 min_prime_factor = { path = "./math/min_prime_factor" }
 ops = { path = "./math/ops" }
-
-sorted_array = { path = "./small/sorted_array" }
 
 rolling_hash = { path = "./string/rolling_hash" }
 z_algorithm = { path = "./string/z_algorithm" }

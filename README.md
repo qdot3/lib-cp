@@ -2,13 +2,9 @@
 
 ## テスト方法
 
-`playground`以外は`--lib`クレートなので下記のコマンドでよい。
-
 ```ps1
-cargo run
+cargo run --package playground
 ```
-
-他にパッケージを作ってしまうと、曖昧性が生じるので注意。
 
 ## 提出方法
 
