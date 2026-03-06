@@ -73,9 +73,10 @@ impl<Idx: Index, W, E: EdgeType> CSR<Idx, W, E> {
     }
 }
 
-impl<Idx: Index, W, E: EdgeType> CSR<Idx, W, E>
+impl<Idx: Index, W, E> CSR<Idx, W, E>
 where
     W: Clone,
+    E: EdgeType,
 {
     /// 座標圧縮すること。
     ///

@@ -3,50 +3,72 @@
 /// # Time Complexity
 ///
 /// *Θ*(*N*)
-pub fn compress(values: &[usize]) -> (Vec<usize>, Vec<usize>) {
-    if values.is_empty() {
-        // アロケーションは遅延されるので、悪影響はない
-        return (Vec::new(), Vec::new());
+pub fn compress<const MIN: u32>(text: &[u32]) -> (Vec<u32>, Vec<u32>) {
+    if std::mem::size_of::<usize>() > 4 {
+        assert!(text.len() <= (1 << 32));
     }
 
-    // １バイトごとに基数ソート
-    const MASK: usize = 0b1111_1111;
-    let mut bucket = [0; 256];
-    let mut result1 = Vec::from_iter(0..values.len());
-    let mut result2 = vec![0; values.len()];
-    for shift in (0..usize::BITS).step_by(8) {
-        bucket.fill(0);
-        for i in result1.iter() {
-            bucket[(values[*i] >> shift) & MASK] += 1
+    // step 1. radix sort
+    let (sorted, buf) = {
+        // assume the size of TLB >= 2^8
+        const B: u32 = 8;
+        const MASK: u32 = (1 << B) - 1;
+
+        let mut bucket = Box::new([0; 4 << B]);
+        for v in text.iter() {
+            let v = v.to_le_bytes();
+            bucket[(v[0] as usize) | (0 << B)] += 1;
+            bucket[(v[1] as usize) | (1 << B)] += 1;
+            bucket[(v[2] as usize) | (2 << B)] += 1;
+            bucket[(v[3] as usize) | (3 << B)] += 1;
         }
 
-        // バケットの左端を計算
-        let mut sum = 0;
-        bucket.iter_mut().for_each(|n| {
-            sum += *n;
-            *n = sum - *n
-        });
+        // keep locality to reduce TLB and cache misses
+        let mut buf1 = Vec::from_iter(text.iter().enumerate().map(|(i, v)| [i as u32, *v]));
+        let mut buf2 = vec![[0; 2]; buf1.len()];
+        let mut shift = 0;
+        for bucket in bucket.chunks_mut(1 << B) {
+            // calculate left-free pointer for each bucket
+            let mut sum = 0;
+            bucket.iter_mut().for_each(|n| {
+                sum += *n;
+                *n = sum - *n;
+            });
 
-        // 安定ソート
-        for i in result1.iter() {
-            let j = (values[*i] >> shift) & MASK;
-            result2[bucket[j]] = *i;
-            bucket[j] += 1
+            for [i, v] in buf1.iter() {
+                let j = ((v >> shift) & MASK) as usize;
+
+                buf2[bucket[j] as usize] = [*i, *v];
+                bucket[j] += 1;
+            }
+
+            std::mem::swap(&mut buf1, &mut buf2);
+            shift += B;
         }
 
-        std::mem::swap(&mut result1, &mut result2);
+        (buf1, buf2)
+    };
+
+    // step 2. rename characters
+    let mut compressed = buf.into_flattened();
+    compressed.truncate(text.len());
+
+    if let Some([i, _]) = sorted.first() {
+        compressed[*i as usize] = MIN;
+    }
+    for iv in sorted.windows(2) {
+        compressed[iv[1][0] as usize] =
+            compressed[iv[0][0] as usize] + (iv[1][1] != iv[0][1]) as u32
     }
 
-    // 座標圧縮。隣接二項を比較する。
-    result2[result1[0]] = 0;
-    result1
-        .windows(2)
-        .for_each(|i| result2[i[1]] = result2[i[0]] + (values[i[0]] != values[i[1]]) as usize);
-    let compressed = result2;
-
-    result1.iter_mut().for_each(|i| *i = values[*i]);
-    result1.dedup();
-    let restore = result1;
+    // step3. make map to restore character
+    let mut restore = sorted;
+    restore.dedup_by_key(|iv| iv[1]);
+    let mut restore = restore.into_flattened();
+    for i in (1..restore.len()).step_by(2) {
+        restore[i / 2] = restore[i];
+    }
+    restore.truncate(restore.len() / 2);
 
     (compressed, restore)
 }
