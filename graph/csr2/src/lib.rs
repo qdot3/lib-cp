@@ -73,8 +73,9 @@ impl<Idx: Index, W, E: EdgeType> CSR<Idx, W, E> {
     }
 }
 
-impl<Idx: Index, W, E> CSR<Idx, W, E>
+impl<Idx, W, E> CSR<Idx, W, E>
 where
+    Idx: Index,
     W: Clone,
     E: EdgeType,
 {
@@ -132,5 +133,3 @@ where
         }
     }
 }
-
-pub struct TreeCSR {}
