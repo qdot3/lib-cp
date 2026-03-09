@@ -288,6 +288,7 @@ dependencies = [
  "rand",
  "rectangle",
  "rmq",
+ "rollback_union_find",
  "rolling_hash",
  "rustc-hash",
  "scc",
@@ -405,6 +406,14 @@ dependencies = [
  "rand",
  "rustc-hash",
  "sparse_table",
+]
+
+[[package]]
+name = "rollback_union_find"
+version = "0.1.0"
+dependencies = [
+ "ops",
+ "rand",
 ]
 
 [[package]]

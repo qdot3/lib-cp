@@ -35,6 +35,7 @@ lazy_segtree = { workspace = true }
 segtree = { workspace = true }
 union_find = { workspace = true }
 union_find_with_potential = { workspace = true }
+rollback_union_find = { workspace = true }
 
 rectangle = { workspace = true }
 

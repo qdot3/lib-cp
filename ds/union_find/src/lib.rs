@@ -22,7 +22,7 @@ where
     /// # Time Complexity
     ///
     /// *Θ*(*N*)
-    pub fn new(value: Box<[T::Set]>) -> Self {
+    pub fn with_values(value: Box<[T::Set]>) -> Self {
         Self {
             parent_or_size: vec![-1; value.len()].into_boxed_slice(),
             value,
@@ -34,7 +34,7 @@ where
     /// # Time Complexity
     ///
     /// *Θ*(*N*)
-    pub fn with_size(n: usize) -> UnionFind<()> {
+    pub fn new(n: usize) -> UnionFind<()> {
         UnionFind {
             parent_or_size: vec![-1; n].into_boxed_slice(),
             value: vec![(); n].into_boxed_slice(),

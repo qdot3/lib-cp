@@ -39,6 +39,7 @@ members = [
     "string/lcp",
     "string/suffix_tree",
     "ds/segtree",
+    "ds/rollback_union_find",
 ]
 
 [workspace.package]
@@ -68,6 +69,7 @@ rmq = { path = "./ds/rmq" }
 sparse_table = { path = "./ds/sparse_table" }
 union_find = { path = "./ds/union_find" }
 union_find_with_potential = { path = "ds/union_find_with_potential" }
+rollback_union_find = { path = "./ds/rollback_union_find" }
 rectangle = { path = "./ds/rectangle" }
 
 convex_hull = { path = "./geo/convex_hull" }
