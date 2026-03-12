@@ -31,6 +31,7 @@ sparse_table = { workspace = true }
 rmq = { workspace = true }
 
 fenwick = { workspace = true }
+simd_bit = { workspace = true }
 lazy_segtree = { workspace = true }
 segtree = { workspace = true }
 union_find = { workspace = true }

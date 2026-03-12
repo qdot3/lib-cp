@@ -293,6 +293,7 @@ dependencies = [
  "rustc-hash",
  "scc",
  "segtree",
+ "simd_bit",
  "sparse_table",
  "suffix_array",
  "thiserror",
@@ -439,6 +440,10 @@ version = "0.1.0"
 dependencies = [
  "ops",
 ]
+
+[[package]]
+name = "simd_bit"
+version = "0.1.0"
 
 [[package]]
 name = "sparse_table"

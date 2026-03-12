@@ -174,7 +174,6 @@ from_bytes_impl_small_signed!( i8 i16 );
 
 #[cfg(test)]
 mod tests {
-
     use rand::{rng, Rng};
 
     use super::*;

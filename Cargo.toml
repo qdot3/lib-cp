@@ -40,6 +40,7 @@ members = [
     "string/suffix_tree",
     "ds/segtree",
     "ds/rollback_union_find",
+    "ds/simd_bit",
 ]
 
 [workspace.package]
@@ -63,6 +64,7 @@ compress = { path = "./algo/compress" }
 
 disjoint_sparse_table = { path = "./ds/disjoint_sparse_table" }
 fenwick = { path = "./ds/fenwick" }
+simd_bit = { path = "./ds/simd_bit" }
 lazy_segtree = { path = "./ds/lazy_segtree" }
 segtree = { path = "./ds/segtree" }
 rmq = { path = "./ds/rmq" }
