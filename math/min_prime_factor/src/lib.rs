@@ -1,22 +1,26 @@
 use std::ops::Index;
 
 pub struct MinPrimeFactor {
-    mpf: Box<[usize]>,
+    mpf: Box<[u32]>,
 }
 
 impl MinPrimeFactor {
     /// # Time Complexity
     ///
     /// *O*(*N* log log *N*)
-    pub fn new(n: usize) -> Self {
-        let mut mpf: Box<[usize]> = (0..=n).collect();
+    pub fn new(n: u32) -> Self {
+        if std::mem::size_of::<usize>() < std::mem::size_of::<u32>() {
+            assert!(n <= usize::MAX as u32);
+        }
+
+        let mut mpf: Box<[u32]> = (0..=n).collect();
         mpf.iter_mut().step_by(2).skip(1).for_each(|p| *p = 2);
-        for i in (3..=n).step_by(2) {
+        for i in (3..=n as usize).step_by(2) {
             let i = i;
-            if mpf[i] == i {
+            if mpf[i] == i as u32 {
                 // i は素数
-                for j in (i * i..=n).step_by(i) {
-                    mpf[j] = mpf[j].min(i)
+                for j in (i * i..=n as usize).step_by(i) {
+                    mpf[j] = mpf[j].min(i as u32)
                 }
             }
         }
@@ -29,7 +33,8 @@ impl MinPrimeFactor {
     /// # Time Complexity
     ///
     /// *O*(log *K*) where K is the number of prime factors
-    pub fn prime_factors(&self, mut x: usize) -> impl Iterator<Item = (usize, usize)> + '_ {
+    pub fn prime_factors(&self, x: u32) -> impl Iterator<Item = (u32, u8)> + '_ {
+        let mut x = x as usize;
         std::iter::from_fn(move || {
             if x <= 1 {
                 None
@@ -38,7 +43,7 @@ impl MinPrimeFactor {
                 let mut n = 0;
                 while self.mpf[x] == p {
                     n += 1;
-                    x /= self.mpf[x]
+                    x /= self.mpf[x] as usize
                 }
                 Some((p, n))
             }
@@ -48,13 +53,13 @@ impl MinPrimeFactor {
     /// # Time Complexity
     ///
     /// *O*(1)
-    pub fn is_prime(&self, x: usize) -> bool {
-        self.mpf[x] == x
+    pub fn is_prime(&self, x: u32) -> bool {
+        self.mpf[x as usize] == x
     }
 }
 
 impl Index<usize> for MinPrimeFactor {
-    type Output = usize;
+    type Output = u32;
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.mpf[index]
