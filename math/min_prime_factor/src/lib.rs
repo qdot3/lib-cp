@@ -1,3 +1,5 @@
+use std::num::NonZero;
+
 pub struct MinPrimeFactor {
     mpf: Box<[[u32; 8]]>,
 }
@@ -10,7 +12,7 @@ impl MinPrimeFactor {
     #[inline]
     const fn mul(lhs: u32, rhs: u32) -> (usize, usize) {
         // `WHEEL[i] * WHEEL[j] % 30` -> position
-        let lut = const {
+        let lut_pos = const {
             let mut table = [[0; 8]; 8];
 
             let mut i = 0;
@@ -31,23 +33,40 @@ impl MinPrimeFactor {
             table
         };
 
+        let lut_div = const {
+            let mut table = [[0; 8]; 8];
+
+            let mut i = 0;
+            while i < 8 {
+                let mut j = 0;
+                while j < 8 {
+                    table[i][j] = Self::WHEEL[i] * Self::WHEEL[j] / 30; // <-
+                    j += 1;
+                }
+                i += 1;
+            }
+
+            table
+        };
+
         let (kl, il) = (lhs / 8, lhs as usize % 8);
         let (kr, ir) = (rhs / 8, rhs as usize % 8);
 
-        let k = kl * (30 * kr + Self::WHEEL[ir])
-            + kr * Self::WHEEL[il]
-            + Self::WHEEL[il] * Self::WHEEL[ir] / 30;
-        let i = lut[il][ir];
+        let k = kl * (30 * kr + Self::WHEEL[ir]) + kr * Self::WHEEL[il] + lut_div[il][ir];
+        let i = lut_pos[il][ir];
 
         (k as usize, i as usize)
     }
 
+    /// # Time Complexity
+    ///
+    /// *O*(*N* log log*N*)
     pub fn new(max: u32) -> Self {
         let mut mpf = Vec::from_iter(
             std::iter::successors(Some(Self::WHEEL), |prev| {
                 Some(std::array::from_fn(|i| prev[i] + 30))
             })
-            .take(max.div_ceil(30).max(1) as usize),
+            .take(max.div_ceil(30) as usize),
         )
         .into_boxed_slice();
         // `0` is equivalent to `None::<NonZeroU32>`
@@ -141,6 +160,9 @@ impl MinPrimeFactor {
         lut[n % 30].map(|i| (n / 30, i))
     }
 
+    /// # Time Complexity
+    ///
+    /// *O*(1)
     pub fn is_prime(&self, n: u32) -> bool {
         if let Some((k, i)) = Self::inner_index(n) {
             self.mpf[k][i] == n
@@ -149,9 +171,7 @@ impl MinPrimeFactor {
         }
     }
 
-    pub fn factorize(&self, mut n: u32) -> Factorize<impl Iterator<Item = u32> + '_> {
-        assert_ne!(n, 0);
-
+    pub fn factorize(&self, n: NonZero<u32>) -> Factorize<impl Iterator<Item = u32> + '_> {
         const LUT: [Option<u32>; 30] = {
             let mut mpf = [None; 30];
 
@@ -171,7 +191,9 @@ impl MinPrimeFactor {
             mpf
         };
 
+        let mut n = n.get();
         let iter = std::iter::from_fn(move || {
+            // FIXME: infinite loop if `n` is `0`
             if let Some(p) = LUT[n as usize % 30] {
                 n /= p;
                 Some(p)

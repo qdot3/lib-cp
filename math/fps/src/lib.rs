@@ -8,13 +8,6 @@ pub struct FPS<T>(
     Vec<T>,
 );
 
-impl<T> FPS<T> {
-    // TODO: capacity と degree を区別したい。iter.size_hint() ?
-    const fn degree(&self) -> usize {
-        self.0.len()
-    }
-}
-
 impl<T> From<Vec<T>> for FPS<T> {
     fn from(value: Vec<T>) -> Self {
         Self(value)
@@ -115,7 +108,7 @@ where
     /// # Time Complexity
     ///
     /// *Θ*(*N* log *N*)
-    pub fn ntt_t(mut self, deg: usize, inverse: bool) -> Vec<Mint<P>> {
+    fn ntt_t(mut self, deg: usize, inverse: bool) -> Vec<Mint<P>> {
         self.0.resize(deg.next_power_of_two(), Mint::new(0));
         let mut w = self.0.len() >> 1;
         while w > 0 {
@@ -143,7 +136,7 @@ where
     /// # Time Complexity
     ///
     /// *Θ*(*N* log *N*)
-    pub fn ntt_f(mut self, deg: usize, inverse: bool) -> Vec<Mint<P>> {
+    fn ntt_f(mut self, deg: usize, inverse: bool) -> Vec<Mint<P>> {
         self.0.resize(deg.next_power_of_two(), Mint::new(0));
         let mut w = 1;
         while w < self.0.len() {
@@ -152,7 +145,6 @@ where
             for (i, pair) in self.0.chunks_exact_mut(w << 1).enumerate() {
                 let (prefix, suffix) = pair.split_at_mut(w);
                 for i in 0..w {
-                    // TODO: 並列化する
                     (prefix[i], suffix[i]) = (prefix[i] + suffix[i], (prefix[i] - suffix[i]) * r)
                 }
                 r = if inverse {
@@ -182,7 +174,7 @@ where
     ///
     /// *O*(*N* log *N*)
     fn mul(self, rhs: Self) -> Self::Output {
-        let deg = self.degree() + rhs.degree() - 1;
+        let deg = self.0.len() + rhs.0.len() - 1;
 
         let mut a = self.ntt_t(deg, false);
         let b = rhs.ntt_t(deg, false);

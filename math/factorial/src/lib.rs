@@ -48,6 +48,21 @@ impl<const MOD: u32> Factorial<MOD> {
         }
     }
 
+    /// 一般化三角数。
+    ///
+    /// - 長さ`n`の配列の累積和を`deg`回計算したとき、`i`番目の要素を加算する回数。
+    ///
+    /// # Time Complexity
+    ///
+    /// *Θ*(1)
+    pub fn triangle(&self, deg: usize, n: usize, i: usize) -> Mint<MOD> {
+        if deg == 0 {
+            Mint::new(0)
+        } else {
+            self.choose(deg - 1 + n - i, deg - 1)
+        }
+    }
+
     pub fn fact(&self, n: usize) -> Mint<MOD> {
         self.fact[n]
     }
