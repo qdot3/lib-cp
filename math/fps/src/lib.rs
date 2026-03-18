@@ -323,31 +323,29 @@ where
         assert_eq!(f[0], Mint::new(0));
         assert!(g.len().min(buf1.len()).min(buf2.len()) >= 2 * k);
 
-        let mut w = 1;
+        let mut w = 2;
         g[0] = Mint::new(1);
         while w <= k {
             w *= 2;
 
             // deg(g) < w/2
             let g = &mut g[..w];
-            g[w / 2..].fill(Mint::new(0));
+            g[w / 4..].fill(Mint::new(0));
 
             // deg(log g) < w/2
             let log_g = &mut buf1[..w];
             Self::_log(g, w as u32 / 2, log_g, buf2, cache);
             log_g[w / 2..].fill(Mint::new(0));
-
-            // deg(f) < w/2
-            buf2[..w / 2].copy_from_slice(&f[..w / 2]);
-            let f = &mut buf2[..w];
-            f[w / 2..].fill(Mint::new(0));
+            for i in 0..w / 2 {
+                log_g[i] = -log_g[i] + f[i]
+            }
+            log_g[0] = Mint::new(1);
 
             Self::butterfly(g);
             Self::butterfly(log_g);
-            Self::butterfly(f);
             for i in 0..w {
                 // deg(g) * deg(1 - log g + f) < w
-                g[i] = g[i] * (Mint::new(1) - log_g[i] + f[i]) // mod 2^(w/2)
+                g[i] *= log_g[i] // mod 2^(w/2)
             }
 
             Self::butterfly_inv(g);
