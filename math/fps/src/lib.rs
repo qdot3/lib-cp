@@ -252,36 +252,7 @@ where
         }
     }
 
-    /// # Time Complexity
-    ///
-    /// *Θ*(*N*)
-    pub fn derive(mut self) -> Self {
-        for i in 1..self.0.len() {
-            self.0[i - 1] = self.0[i] * Mint::new(i as u32)
-        }
-
-        self
-    }
-
-    pub fn integrate(mut self, constant: Mint<P>, cache: &mut ModInvCache<P>) -> Self {
-        cache.extend(self.0.len() as u32 + 1);
-
-        for i in (1..self.0.len()).rev() {
-            self.0[i] = self.0[i - 1] * Mint::new(cache.get(i))
-        }
-        self.0[0] = constant;
-
-        self
-    }
-
-    fn _log(
-        f: &[Mint<P>],
-        k: u32,
-        g: &mut [Mint<P>],
-        buf: &mut [Mint<P>],
-        cache: &mut ModInvCache<P>,
-    ) {
-        cache.extend(k);
+    fn _log(f: &[Mint<P>], k: u32, g: &mut [Mint<P>], buf: &mut [Mint<P>], cache: &ModInvCache<P>) {
         let k = k as usize;
 
         assert!(k.is_power_of_two());
@@ -343,7 +314,7 @@ where
         g: &mut [Mint<P>],
         buf1: &mut [Mint<P>],
         buf2: &mut [Mint<P>],
-        cache: &mut ModInvCache<P>,
+        cache: &ModInvCache<P>,
     ) {
         let k = k as usize;
 
@@ -366,15 +337,14 @@ where
             Self::_log(g, w as u32 / 2, log_g, buf2, cache);
             log_g[w / 2..].fill(Mint::new(0));
 
-            Self::butterfly(g);
-            Self::butterfly(log_g);
-
             // deg(f) < w/2
             buf2[..w / 2].copy_from_slice(&f[..w / 2]);
             let f = &mut buf2[..w];
             f[w / 2..].fill(Mint::new(0));
-            Self::butterfly(f);
 
+            Self::butterfly(g);
+            Self::butterfly(log_g);
+            Self::butterfly(f);
             for i in 0..w {
                 // deg(g) * deg(1 - log g + f) < w
                 g[i] = g[i] * (Mint::new(1) - log_g[i] + f[i]) // mod 2^(w/2)
