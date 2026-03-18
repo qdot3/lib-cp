@@ -179,17 +179,30 @@ where
         )
     }
 
+    const NORM: [Mint<P>; 32] = {
+        let mut norm = [Mint::new(0); 32];
+
+        let mut exp = 0;
+        while exp <= P.ilog2() {
+            norm[exp as usize] = Mint::new(2).pow(exp).pow(P - 2);
+            exp += 1;
+        }
+        norm
+    };
+
+    #[inline]
     fn _inv(f: &[Mint<P>], k: usize, g: &mut [Mint<P>], buf: &mut [Mint<P>]) {
         assert!(k.is_power_of_two());
-        assert!(f.len() >= 2 * k);
-        assert!(g.len().min(buf.len()) >= 4 * k);
+        assert!(f.len() >= k);
+        assert!(g.len().min(buf.len()) >= 2 * k);
 
         let mut w = 2;
+        g[0] = f[0].inv().unwrap();
         while w <= k {
             w *= 2;
 
             // deg(f) < w/2
-            buf.copy_from_slice(&f[..w / 2]);
+            buf[..w / 2].copy_from_slice(&f[..w / 2]);
             let f = &mut buf[..w];
             f[w / 2..].fill(Mint::new(0));
             Self::butterfly(f);
@@ -199,11 +212,15 @@ where
             g[w / 4..].fill(Mint::new(0));
             Self::butterfly(g);
 
+            // deg(2g - fg^2) < w
             for i in 0..w {
                 g[i] = g[i] * Mint::new(2) - f[i] * g[i] * g[i]
             }
 
             Self::butterfly_inv(g);
+            g[..w / 2]
+                .iter_mut()
+                .for_each(|g| *g *= Self::NORM[w.ilog2() as usize]);
         }
     }
 
@@ -212,44 +229,24 @@ where
     /// # Time Complexity
     ///
     /// *Θ*(*N* log *N*)
-    pub fn inv(&self, k: usize) -> Option<Self> {
-        if let Some(g0) = self.0.get(0).and_then(|f0| f0.inv()) {
-            let k = (self.0.len().max(k) + k).next_power_of_two();
+    pub fn inv(self, k: usize) -> Option<Self> {
+        if self.0.get(0).is_some_and(|f0| *f0 != Mint::new(0)) {
+            let k = k.next_power_of_two();
 
-            let mut g = vec![Mint::new(0); k];
-            g[0] = g0;
+            let mut f = self.0;
+            f.truncate(k);
+            f.resize(k * 5, Mint::new(0));
 
-            let mut f = vec![Mint::new(0); k];
+            {
+                let (f, rest) = f.split_at_mut(k);
+                let (g, buf) = rest.split_at_mut(k * 2);
 
-            let mut w = 2;
-            let frac_1_2 = Mint::new(2).inv().unwrap();
-            let mut norm = frac_1_2;
-            while w < k {
-                w <<= 1;
-                norm *= frac_1_2;
-
-                // deg(f) < w/2
-                let f = f.split_at_mut(w).0;
-                let n = self.0.len().min(w / 2);
-                f[..n].copy_from_slice(&self.0[..n]);
-                f[n..w / 2].fill(Mint::new(0));
-                Self::butterfly(f);
-
-                // deg(g) < w/4
-                let g = g.split_at_mut(w).0;
-                Self::butterfly(g);
-
-                for (f, g) in f.iter().zip(g.iter_mut()) {
-                    *g = *g * Mint::new(2) - *f * *g * *g // mod x^(w/2)
-                }
-
-                Self::butterfly_inv(g);
-                g.iter_mut().take(w / 2).for_each(|g| *g *= norm);
-                g[w / 2..w].fill(Mint::new(0));
+                Self::_inv(f, k, g, buf);
+                f[..k].copy_from_slice(&g[..k]);
             }
 
-            g.truncate(k / 2);
-            Some(Self(g))
+            f.truncate(k);
+            Some(Self(f))
         } else {
             None
         }
@@ -279,25 +276,62 @@ where
 
     fn _log(
         f: &[Mint<P>],
-        k: usize,
+        k: u32,
         g: &mut [Mint<P>],
         buf: &mut [Mint<P>],
         cache: &mut ModInvCache<P>,
     ) {
-        assert!(k.is_power_of_two());
-        assert!(f.len() >= 2 * k);
-        assert!(g.len().min(buf.len()) >= 4 * k);
+        cache.extend(k);
+        let k = k as usize;
 
-        let mut w = 2;
-        g[0] = Mint::new(1);
+        assert!(k.is_power_of_two());
+        assert!(f.len() >= k);
+        assert_eq!(f[0], Mint::new(1));
+        assert!(g.len().min(buf.len()) >= 2 * k);
+
+        Self::_inv(f, k, g, buf);
+        g[k..].fill(Mint::new(0));
+        let g = &mut g[..k * 2];
+        Self::butterfly(g);
+
+        for i in 1..k {
+            buf[i - 1] = Mint::new(i as u32) * f[i]
+        }
+        let f_prime = &mut buf[..k * 2];
+        f_prime[k..].fill(Mint::new(0));
+        Self::butterfly(f_prime);
+
+        for i in 0..k * 2 {
+            g[i] *= f_prime[i]
+        }
+        Self::butterfly_inv(g);
+        let i = k.trailing_zeros() as usize + 1;
+        g[..k].iter_mut().for_each(|g| *g *= Self::NORM[i]);
+
+        for i in (1..k).rev() {
+            g[i] = g[i - 1] * Mint::new(cache.get(i))
+        }
+        g[0] = Mint::new(0)
     }
 
     pub fn log(self, k: usize, cache: &mut ModInvCache<P>) -> Option<Self> {
-        cache.extend(k as u32);
-
         if self.0.get(0).is_some_and(|v| *v == Mint::new(1)) {
-            let frac_1_f = self.inv(k).unwrap();
-            Some(self.derive().mul(frac_1_f).integrate(Mint::new(0), cache))
+            cache.extend(k as u32);
+            let mut f = self.0;
+
+            let k = k.next_power_of_two();
+            f.truncate(k);
+            f.resize(k * 5, Mint::new(0));
+
+            {
+                let (f, rest) = f.split_at_mut(k);
+                let (g, buf) = rest.split_at_mut(k * 2);
+                Self::_log(f, k as u32, g, buf, cache);
+                f.copy_from_slice(&g[..k]);
+            }
+
+            f.truncate(k);
+            Some(Self(f))
         } else {
             None
         }
@@ -305,77 +339,102 @@ where
 
     fn _exp(
         f: &[Mint<P>],
-        k: usize,
+        k: u32,
         g: &mut [Mint<P>],
         buf1: &mut [Mint<P>],
         buf2: &mut [Mint<P>],
+        cache: &mut ModInvCache<P>,
     ) {
+        let k = k as usize;
+
         assert!(k.is_power_of_two());
-        assert!(f.len() >= 2 * k);
-        assert!(g.len().min(buf1.len()).min(buf2.len()) >= 4 * k);
+        assert!(f.len() >= k);
+        assert_eq!(f[0], Mint::new(0));
+        assert!(g.len().min(buf1.len()).min(buf2.len()) >= 2 * k);
 
         let mut w = 1;
         g[0] = Mint::new(1);
         while w <= k {
             w *= 2;
 
-            // deg(g) <w/4
+            // deg(g) < w/2
             let g = &mut g[..w];
-            g[w / 4..].fill(Mint::new(0));
-            Self::butterfly(g);
+            g[w / 2..].fill(Mint::new(0));
 
             // deg(log g) < w/2
             let log_g = &mut buf1[..w];
-            todo!("log");
+            Self::_log(g, w as u32 / 2, log_g, buf2, cache);
+            log_g[w / 2..].fill(Mint::new(0));
+
+            Self::butterfly(g);
+            Self::butterfly(log_g);
 
             // deg(f) < w/2
-            buf2.copy_from_slice(&f[..w / 2]);
+            buf2[..w / 2].copy_from_slice(&f[..w / 2]);
             let f = &mut buf2[..w];
             f[w / 2..].fill(Mint::new(0));
             Self::butterfly(f);
 
             for i in 0..w {
-                // deg(g) * deg(1 - log g + f) < 3w/4 < w
+                // deg(g) * deg(1 - log g + f) < w
                 g[i] = g[i] * (Mint::new(1) - log_g[i] + f[i]) // mod 2^(w/2)
             }
 
             Self::butterfly_inv(g);
-            todo!("normalize")
+            let i = w.trailing_zeros() as usize;
+            g[..w / 2].iter_mut().for_each(|g| *g *= Self::NORM[i]);
         }
     }
 
-    pub fn pow(mut self, exp: usize, k: usize, cache: &mut ModInvCache<P>) -> Self {
+    // pub fn exp()
+
+    pub fn pow(mut self, exp: u32, k: u32, cache: &mut ModInvCache<P>) -> Self {
+        let k = k as usize;
+
         if let Some(d) = self.0.iter().position(|v| *v != Mint::new(0)) {
-            if let Some(k) = k.checked_sub(d.saturating_mul(exp)) {
-                let (mut f, k) = {
+            if let Some(k) = k.checked_sub(d.saturating_mul(exp as usize)) {
+                let (mut f, k, offset) = {
                     let mut f = self.0;
                     f.drain(..d);
 
                     let k = k.next_power_of_two();
-                    f.truncate(k);
-                    // 2k + 4k * 3
-                    f.resize(k * 14, Mint::new(0));
+                    let offset = d * exp as usize;
 
-                    (f, k)
+                    f.truncate(k);
+                    f.resize((k * 7).max(k + offset), Mint::new(0));
+
+                    (f, k, offset)
                 };
 
+                cache.extend(k as u32);
+
                 {
-                    let (f, rest) = f.split_at_mut(k * 2);
-                    let (g, rest) = rest.split_at_mut(k * 4);
-                    let (buf1, buf2) = rest.split_at_mut(k * 4);
+                    let (f, rest) = f.split_at_mut(k);
+                    let (g, rest) = rest.split_at_mut(k * 2);
+                    let (buf1, rest) = rest.split_at_mut(k * 2);
+                    let buf2 = &mut rest[..k * 2];
 
-                    todo!("log");
+                    let f0 = f[0].pow(exp);
+                    let inv_f0 = f0.inv().unwrap();
+                    f.iter_mut().for_each(|f| *f *= inv_f0);
 
-                    Self::_exp(f, k, g, buf1, buf2);
-                    f.copy_from_slice(&g[..k * 2]);
+                    Self::_log(f, k as u32, g, buf1, cache);
+                    f.copy_from_slice(&g[..k]);
+                    f.iter_mut().for_each(|f| *f *= Mint::new(exp));
+                    Self::_exp(f, k as u32, g, buf1, buf2, cache);
+                    g[..k].iter_mut().for_each(|g| *g *= f0);
                 }
 
-                f.truncate(k * 2);
+                f.copy_within(k..k * 2, offset);
+                f.truncate(k + offset);
+                f[..offset].fill(Mint::new(0));
+
                 return Self(f);
             }
         }
 
         self.0.clear();
+        self.0.extend(std::iter::repeat_n(Mint::new(0), k));
         self
     }
 }
@@ -422,7 +481,7 @@ where
 pub struct ModInvCache<const P: u32>(Vec<u32>);
 
 impl<const P: u32> ModInvCache<P> {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self(Vec::new())
     }
 
