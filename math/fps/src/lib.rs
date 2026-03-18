@@ -158,7 +158,7 @@ where
     }
 
     pub fn ones(deg: usize) -> Self {
-        Self(vec![Mint::new(1); deg + 1])
+        Self(vec![Mint::new(1); deg])
     }
 
     /// Calculates degree of the FPS.
@@ -337,7 +337,7 @@ where
             Self::_log(g, w as u32 / 2, log_g, buf2, cache);
             log_g[w / 2..].fill(Mint::new(0));
             for i in 0..w / 2 {
-                log_g[i] = -log_g[i] + f[i]
+                log_g[i] = f[i] - log_g[i]
             }
             log_g[0] = Mint::new(1);
 
