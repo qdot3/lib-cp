@@ -112,7 +112,7 @@ where
     /// # Time Complexity
     ///
     /// *Θ*(*N* log *N*)
-    fn butterfly(f: &mut [Mint<P>]) {
+    pub fn butterfly(f: &mut [Mint<P>]) {
         assert!(f.len().is_power_of_two());
 
         let mut w = f.len() >> 1;
@@ -139,7 +139,7 @@ where
     /// # Time Complexity
     ///
     /// *Θ*(*N* log *N*)
-    fn butterfly_inv(f: &mut [Mint<P>]) {
+    pub fn butterfly_inv(f: &mut [Mint<P>]) {
         assert!(f.len().is_power_of_two());
 
         let mut w = 1;
@@ -159,6 +159,10 @@ where
 
     pub fn ones(deg: usize) -> Self {
         Self(vec![Mint::new(1); deg])
+    }
+
+    pub fn repeat_n(ptn: Vec<Mint<P>>, n: usize) -> Self {
+        Self(Vec::from_iter(std::iter::repeat_n(ptn, n).flatten()))
     }
 
     /// Calculates degree of the FPS.
@@ -190,7 +194,7 @@ where
         norm
     };
 
-    #[inline]
+    #[inline(always)]
     fn _inv(f: &[Mint<P>], k: usize, g: &mut [Mint<P>], buf: &mut [Mint<P>]) {
         assert!(k.is_power_of_two());
         assert!(f.len() >= k);
@@ -252,6 +256,7 @@ where
         }
     }
 
+    #[inline(always)]
     fn _log(f: &[Mint<P>], k: u32, g: &mut [Mint<P>], buf: &mut [Mint<P>], cache: &ModInvCache<P>) {
         let k = k as usize;
 
@@ -308,6 +313,7 @@ where
         }
     }
 
+    #[inline(always)]
     fn _exp(
         f: &[Mint<P>],
         k: u32,
