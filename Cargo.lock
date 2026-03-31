@@ -107,6 +107,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "hilbert_sort"
+version = "0.1.0"
+
+[[package]]
 name = "input"
 version = "0.1.0"
 dependencies = [
@@ -264,6 +268,7 @@ name = "playground"
 version = "0.1.0"
 dependencies = [
  "bipartite",
+ "compress",
  "convex_hull",
  "csr",
  "disjoint_sparse_table",
@@ -273,6 +278,7 @@ dependencies = [
  "floor_sum",
  "fps",
  "from_bytes",
+ "hilbert_sort",
  "input",
  "itertools",
  "kmp",

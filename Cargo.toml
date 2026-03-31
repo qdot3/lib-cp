@@ -41,6 +41,7 @@ members = [
     "ds/segtree",
     "ds/rollback_union_find",
     "ds/simd_bit",
+    "algo/hilbert_sort",
 ]
 
 [workspace.package]
@@ -61,6 +62,7 @@ thiserror = "2.0.16"
 # original crates
 # `crate = { workspace = true }`の形式で利用する。フォルダ構造の変更しても、ここだけ直せばよい。
 compress = { path = "./algo/compress" }
+hilbert_sort = { path = "./algo/hilbert_sort" }
 
 disjoint_sparse_table = { path = "./ds/disjoint_sparse_table" }
 fenwick = { path = "./ds/fenwick" }

@@ -17,6 +17,9 @@ fixedbitset = "0.5.7"
 thiserror = "2.0.16"
 
 # workspace members
+hilbert_sort = { workspace = true }
+compress.workspace = true
+
 convex_hull = { workspace = true }
 point = { workspace = true }
 
