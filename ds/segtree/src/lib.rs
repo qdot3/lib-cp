@@ -1,4 +1,4 @@
-use std::ops::RangeBounds;
+use std::ops::{Index, RangeBounds};
 
 use ops::Monoid;
 
@@ -8,10 +8,10 @@ where
     T: Monoid,
 {
     /// full binary tree.
-    /// `data.len() = (offset + n_leave).next_multiple_of(2)`
+    /// `data.len() = (offset + net_len).next_multiple_of(2)`
     data: Box<[T::Set]>,
     offset: usize,
-    net_leaves: usize,
+    net_len: usize,
 }
 
 impl<T> Segtree<T>
@@ -107,7 +107,7 @@ where
             l >>= l.trailing_zeros();
 
             if l == 1 {
-                return self.net_leaves;
+                return self.net_len;
             }
         }
 
@@ -124,7 +124,7 @@ where
         }
         l >>= 1;
 
-        (l ^ self.offset).min(self.net_leaves)
+        (l ^ self.offset).min(self.net_len)
     }
 
     /// # Time Complexity
@@ -165,12 +165,11 @@ where
             temp = T::op(self.data[r - 1], acc);
             pred(temp)
         } {
-            acc = temp;
-
             if r.is_power_of_two() {
                 return 0;
             }
 
+            acc = temp;
             r -= 1;
             r >>= r.trailing_zeros();
         }
@@ -194,6 +193,16 @@ where
     }
 }
 
+impl<T> Segtree<T>
+where
+    T: Monoid,
+{
+    /// Extracts a slice containing the values.
+    pub fn as_slice(&self) -> &[T::Set] {
+        &self.data[self.offset..][..self.net_len]
+    }
+}
+
 impl<T> From<Vec<T::Set>> for Segtree<T>
 where
     T: Monoid<Set: Copy>,
@@ -210,7 +219,7 @@ where
         // never overflow
         let offset = value.len().next_power_of_two();
         let capacity = offset + value.len() + (value.len() & 1);
-        let net_leaves = value.len();
+        let net_len = value.len();
 
         // initialize leaves
         let mut data = Vec::with_capacity(capacity);
@@ -230,15 +239,18 @@ where
         Self {
             data,
             offset,
-            net_leaves,
+            net_len,
         }
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+impl<T> Index<usize> for Segtree<T>
+where
+    T: Monoid,
+{
+    type Output = T::Set;
 
-    #[test]
-    fn partition_left() {}
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.as_slice()[index]
+    }
 }
