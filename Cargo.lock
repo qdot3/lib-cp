@@ -184,6 +184,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "montgomery-uint"
+version = "0.1.0"
+source = "git+https://github.com/qdot3/montgomery#2d1f4570295ef5cbde71b7a81eb5bc51712793e5"
+
+[[package]]
 name = "num"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -287,6 +292,7 @@ dependencies = [
  "manacher",
  "min_prime_factor",
  "mint",
+ "montgomery-uint",
  "num",
  "ops",
  "point",

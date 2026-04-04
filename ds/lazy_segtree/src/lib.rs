@@ -340,3 +340,181 @@ where
             .finish()
     }
 }
+
+/*
+pub trait MonoidAction {
+    type F: Monoid<Set: Copy>;
+    type Arg: Monoid<Set: Copy>;
+
+    fn act(
+        f: <Self::F as SemiGroup>::Set,
+        arg: <Self::Arg as SemiGroup>::Set,
+    ) -> <Self::Arg as SemiGroup>::Set;
+}
+
+pub struct LazySegtree<A>
+where
+    A: MonoidAction,
+{
+    // full binary tree
+    tree: Box<[(<A::F as SemiGroup>::Set, <A::Arg as SemiGroup>::Set)]>,
+    offset: usize,
+    net_len: usize,
+}
+
+impl<A> LazySegtree<A>
+where
+    A: MonoidAction,
+{
+    /// Returns half-open interval [l, r)
+    ///
+    /// # Panics
+    ///
+    /// - `range` should be within bounds
+    fn parse_range<R>(&self, range: R) -> [usize; 2]
+    where
+        R: RangeBounds<usize>,
+    {
+        // overflow results in empty range
+        let l = match range.start_bound() {
+            std::ops::Bound::Included(&l) => l,
+            std::ops::Bound::Excluded(&l) => l.wrapping_sub(1),
+            std::ops::Bound::Unbounded => 0,
+        };
+        let r = match range.end_bound() {
+            std::ops::Bound::Included(&r) => r.wrapping_add(1),
+            std::ops::Bound::Excluded(&r) => r,
+            std::ops::Bound::Unbounded => self.net_len,
+        };
+        assert!(l < self.net_len && r <= self.net_len, "index out of bounds");
+
+        [l + self.offset, r + self.offset]
+    }
+
+    #[inline(always)]
+    fn reflect_then_propagate(&mut self, Range { start, end }: Range<usize>) {
+        let mut propagate_at = |p: usize| {
+            let (f, arg) = self.tree[p];
+            self.tree[p] = (A::F::id(), A::act(f, arg));
+
+            if let Some(c) = self.tree.as_chunks_mut::<2>().0.get_mut(p) {
+                c[0].0 = A::F::op(f, c[0].0);
+                c[1].0 = A::F::op(f, c[1].0);
+            }
+        };
+
+        let end = end - 1;
+        let d = usize::BITS - (start ^ end).leading_zeros();
+
+        // propagate in top-to-bottom order
+        for d in (d..usize::BITS - start.leading_zeros()).rev() {
+            propagate_at(start >> d);
+        }
+        for d in (start.trailing_zeros()..d).rev() {
+            propagate_at(start >> d);
+        }
+        for d in (end.trailing_zeros()..d).rev() {
+            propagate_at(end >> d);
+        }
+    }
+
+    #[inline(always)]
+    fn recalculate(&mut self, Range { start, end }: Range<usize>) {
+        let mut recalculate_at =
+            |p: usize| self.tree[p].1 = A::Arg::op(self.tree[p << 1].1, self.tree[(p << 1) | 1].1);
+
+        let end = end - 1;
+        let d = usize::BITS - (start ^ end).leading_zeros();
+
+        // recalculate bottom-to-top order
+        for d in 1 + start.trailing_zeros()..d {
+            recalculate_at(start >> d);
+        }
+        for d in 1 + end.trailing_zeros()..d {
+            recalculate_at(end >> d);
+        }
+        for d in d.max(1)..usize::BITS - start.leading_zeros() {
+            recalculate_at(start >> d);
+        }
+    }
+
+    /// # Time Complexity
+    ///
+    /// *O*(log *N*)
+    pub fn range_update<R>(&mut self, range: R, f: <A::F as SemiGroup>::Set)
+    where
+        R: RangeBounds<usize>,
+    {
+        let [l, r] = self.parse_range(range);
+        if (l..r).is_empty() {
+            return;
+        }
+
+        self.reflect_then_propagate(l..r);
+
+        // update
+        {
+            let [mut l, mut r] = [l >> l.trailing_zeros(), r >> r.trailing_zeros()];
+
+            while {
+                if l >= r {
+                    self.tree[l].0 = A::F::op(f, self.tree[l].0);
+                    l += 1;
+                    l >>= l.trailing_zeros();
+                } else {
+                    r -= 1;
+                    self.tree[r].0 = A::F::op(f, self.tree[r].0);
+                    r >>= r.trailing_zeros();
+                }
+
+                l != r
+            } {}
+        }
+
+        self.recalculate(l..r);
+    }
+
+    /// # Time Complexity
+    ///
+    /// *O*(log *N*)
+    pub fn range_query<R>(&mut self, range: R) -> <A::Arg as SemiGroup>::Set
+    where
+        R: RangeBounds<usize>,
+    {
+        let [l, r] = self.parse_range(range);
+        if (l..r).is_empty() {
+            return A::Arg::id();
+        }
+
+        self.reflect_then_propagate(l..r);
+
+        let [mut l, mut r] = [l >> l.trailing_zeros(), r >> r.trailing_zeros()];
+        let [mut acc_l, mut acc_r] = [A::Arg::id(); 2];
+        while {
+            if l >= r {
+                acc_l = A::Arg::op(acc_l, self.tree[l].1);
+                l += 1;
+                l >>= l.trailing_zeros();
+            } else {
+                r -= 1;
+                acc_r = A::Arg::op(self.tree[l].1, acc_r);
+                r >>= r.trailing_zeros();
+            }
+
+            l != r
+        } {}
+
+        A::Arg::op(acc_l, acc_r)
+    }
+}
+
+impl<A> From<Vec<<A::Arg as SemiGroup>::Set>> for LazySegtree<A>
+where
+    A: MonoidAction,
+{
+    fn from(value: Vec<<A::Arg as SemiGroup>::Set>) -> Self {
+        todo!()
+    }
+}
+
+*/

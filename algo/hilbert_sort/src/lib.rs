@@ -39,7 +39,7 @@ where
 
 /// # Time Complexity
 ///
-/// *O*(N log max A_i)
+/// *O*(N log max {u_i})
 pub fn hilbert_sort_2d<U, T>(slice: &mut [Query<U, T>])
 where
     U: Unsigned,
