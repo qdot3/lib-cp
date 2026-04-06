@@ -17,7 +17,7 @@ fixedbitset = "0.5.7"
 thiserror = "2.0.16"
 
 # from github
-montgomery-uint = { git = "https://github.com/qdot3/montgomery" }
+lib-modulo = { git = "https://github.com/qdot3/montgomery" }
 
 # workspace members
 hilbert_sort = { workspace = true }

@@ -157,6 +157,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "lib-modulo"
+version = "0.1.0"
+source = "git+https://github.com/qdot3/montgomery#13705bfdff66bca8c23130144f165e5b2989b068"
+
+[[package]]
 name = "libc"
 version = "0.2.178"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -182,11 +187,6 @@ version = "0.1.0"
 dependencies = [
  "num",
 ]
-
-[[package]]
-name = "montgomery-uint"
-version = "0.1.0"
-source = "git+https://github.com/qdot3/montgomery#2d1f4570295ef5cbde71b7a81eb5bc51712793e5"
 
 [[package]]
 name = "num"
@@ -289,10 +289,10 @@ dependencies = [
  "kmp",
  "lazy_segtree",
  "lca",
+ "lib-modulo",
  "manacher",
  "min_prime_factor",
  "mint",
- "montgomery-uint",
  "num",
  "ops",
  "point",
