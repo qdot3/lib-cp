@@ -2,7 +2,7 @@
 name = "hilbert_sort"
 version = "0.1.0"
 edition.workspace = true
-rust-version.workspace = true
+
 authors.workspace = true
 
 [dependencies]
