@@ -16,7 +16,7 @@ fixedbitset = "0.5.7"
 thiserror = "2.0.16"
 
 # my crates
-lib-modulo = "0.2.1"
+lib-modulo = "0.2.2"
 
 # workspace members
 hilbert_sort = { workspace = true }
