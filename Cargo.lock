@@ -158,9 +158,9 @@ dependencies = [
 
 [[package]]
 name = "lib-modulo"
-version = "0.3.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e43804c96f94d824470be3ff50e4dc105802c50c3e920e5c9f3eb3e77e61a9ee"
+checksum = "8aeb42cd5890735a9e421ff7c987e6fdf25832f7a37bff6c0fac4ba40584aa3d"
 
 [[package]]
 name = "libc"
