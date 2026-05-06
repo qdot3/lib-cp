@@ -23,6 +23,7 @@ members = [
     "graph/scc",
     "graph/tree_dp",
     "io/input",
+    "io/output",
     "io/from_bytes",
     "math/factorial",
     "math/floor_sum",
@@ -100,4 +101,5 @@ manacher = { path = "./string/manacher" }
 suffix_array = { path = "./string/suffix_array" }
 
 input = { path = "./io/input" }
+output = { path = "./io/output" }
 from_bytes = { path = "./io/from_bytes" }
