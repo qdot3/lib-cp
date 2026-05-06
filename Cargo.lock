@@ -303,6 +303,7 @@ dependencies = [
  "mint",
  "num",
  "ops",
+ "output",
  "point",
  "proconio",
  "rand",

@@ -60,3 +60,4 @@ suffix_array = { workspace = true }
 
 from_bytes = { workspace = true }
 input = { workspace = true }
+output = { workspace = true }

@@ -2,16 +2,55 @@
 //! - <https://zenn.dev/mizar/articles/fc87d667153080>
 use std::num::IntErrorKind;
 
+/// FIXME: use std::hint::cold_path();
+#[cold]
+const fn cold_path() {}
+
+/// `b"1234567890123456"`を`1234567890123456_u64`にパースする。
+#[inline(always)]
+const fn parse_16_digits(bytes: [u8; 16]) -> Result<u64, IntErrorKind> {
+    let (mut hi, mut lo) = {
+        let bytes = bytes.as_chunks::<8>().0;
+        // ascii コードの 0x30..=0x39 が数値に対応している
+        (
+            u64::from_le_bytes(bytes[0]) ^ 0x3030_3030_3030_3030,
+            u64::from_le_bytes(bytes[1]) ^ 0x3030_3030_3030_3030,
+        )
+    };
+
+    // 上位４ビットが０で下位４ビットが９以下のとき、かつそのときに限り、等号成立
+    // - 7 * 9 < 2^6 < 7 * 10, 7 * 15 = 105 < 2^7
+    if (hi | lo | (hi + 0x0606_0606_0606_0606) | (lo + 0x0606_0606_0606_0606))
+        & 0xf0f0_f0f0_f0f0_f0f0
+        == 0
+    {
+        // [8, 7, 6, 5, 4, 3, 2, 1] -> [78, 56, 34, 12]
+        hi = (hi.wrapping_mul((10 << 8) + 1) >> 8) & 0x00ff_00ff_00ff_00ff;
+        lo = (lo.wrapping_mul((10 << 8) + 1) >> 8) & 0x00ff_00ff_00ff_00ff;
+        // [78, 56, 34, 12] -> [5678, 1234]
+        hi = (hi.wrapping_mul((100 << 16) + 1) >> 16) & 0x0000_ffff_0000_ffff;
+        lo = (lo.wrapping_mul((100 << 16) + 1) >> 16) & 0x0000_ffff_0000_ffff;
+        // [5678, 1234] -> [12345678]
+        hi = hi.wrapping_mul((10000 << 32) + 1) >> 32;
+        lo = lo.wrapping_mul((10000 << 32) + 1) >> 32;
+
+        Ok(hi * 1_0000_0000 + lo)
+    } else {
+        cold_path();
+        Err(IntErrorKind::InvalidDigit)
+    }
+}
+
 /// `b"12345678"`を`12345678_u64`に変換する。
 // inlined due to frequent calls
-#[inline]
+#[inline(always)]
 const fn parse_8_digits(bytes: [u8; 8]) -> Result<u64, IntErrorKind> {
     // ascii コードの 0x30..=0x39 が数値に対応している
     let mut n = u64::from_le_bytes(bytes) ^ 0x3030_3030_3030_3030;
 
     // 上位４ビットが０で下位４ビットが９以下のとき、かつそのときに限り、等号成立
     // - 7 * 9 < 2^6 < 7 * 10, 7 * 15 = 105 < 2^7
-    if (n & 0xf0f0_f0f0_f0f0_f0f0) | (n.wrapping_mul(7) & 0x4040_4040_4040_4040) == 0 {
+    if (n | (n + 0x0606_0606_0606_0606)) & 0xf0f0_f0f0_f0f0_f0f0 == 0 {
         // [8, 7, 6, 5, 4, 3, 2, 1] -> [78, 56, 34, 12]
         n = (n.wrapping_mul((10 << 8) + 1) >> 8) & 0x00ff_00ff_00ff_00ff;
         // [78, 56, 34, 12] -> [5678, 1234]
@@ -21,7 +60,7 @@ const fn parse_8_digits(bytes: [u8; 8]) -> Result<u64, IntErrorKind> {
 
         Ok(n)
     } else {
-        // TODO: cold_path();
+        cold_path();
         Err(IntErrorKind::InvalidDigit)
     }
 }
@@ -34,7 +73,7 @@ const fn parse_4_digits(bytes: [u8; 4]) -> Result<u32, IntErrorKind> {
 
     // 上位４ビットが０で下位４ビットが９以下のとき、かつそのときに限り、等号成立
     // - 7 * 9 < 2^6 < 7 * 10, 7 * 15 = 105 < 2^7
-    if (n & 0xf0f0_f0f0) | (n.wrapping_mul(7) & 0x4040_4040) == 0 {
+    if (n | n + 0x0606_0606) & 0xf0f0_f0f0 == 0 {
         // [4, 3, 2, 1] -> [34, 12]
         n = (n.wrapping_mul((10 << 8) + 1) >> 8) & 0x00ff_00ff;
         // [34, 12] -> [1234]
@@ -42,7 +81,7 @@ const fn parse_4_digits(bytes: [u8; 4]) -> Result<u32, IntErrorKind> {
 
         Ok(n)
     } else {
-        // TODO: cold_path();
+        cold_path();
         Err(IntErrorKind::InvalidDigit)
     }
 }
@@ -76,6 +115,15 @@ macro_rules! parse_digits {
 
         n
     }};
+}
+
+fn strip_sign(bytes: &[u8]) -> (bool, &[u8]) {
+    match bytes {
+        [n, ..] if n >> 4 == 3 => (true, bytes),
+        [b'-', digit @ ..] => (false, digit),
+        [b'+', digit @ ..] => (true, digit),
+        _ => (true, bytes),
+    }
 }
 
 macro_rules! from_bytes_impl {
@@ -181,7 +229,7 @@ mod tests {
     #[test]
     fn random() {
         let mut rng = rng();
-        for _ in 0..1000 {
+        for _ in 0..1 << 20 {
             let n: i64 = rng.random();
             let s = n.to_string().clone();
             assert_eq!(i64::from_bytes(s.as_bytes()), Ok(n))

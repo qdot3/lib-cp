@@ -11,33 +11,31 @@ impl IntBuffer {
         }
     }
 
-    const fn clear(&mut self) {
-        self.len = self.buf.len()
-    }
-
-    const fn is_empty(&self) -> bool {
-        self.len == self.buf.len()
-    }
-
-    /// - `10 <= n <= 99`
-    /// - 最初に書き込む前に`self.len`を初期化する必要がある
-    #[inline(always)]
-    fn write_2_digits(&mut self, n: usize) {
-        static LUT: &[u8; 200] = b"00010203040506070809101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899";
-
-        self.len -= 2;
-        self.buf[self.len..self.len + 2].copy_from_slice(&LUT[n * 2..n * 2 + 2]);
-    }
-
     pub fn format<T>(&mut self, n: T) -> &str
     where
-        T: Format<Buffer = Self>,
+        T: BufFormat<Buffer = Self>,
     {
         T::format(n, self)
     }
 }
 
-pub trait Format {
+static LUT4: [[u8; 4]; 10000] = const {
+    let mut lut = [[0; 4]; 10000];
+
+    let mut i = 0;
+    while i < 10000 {
+        lut[i][3] = (i / 0001 % 10) as u8 + b'0';
+        lut[i][2] = (i / 0010 % 10) as u8 + b'0';
+        lut[i][1] = (i / 0100 % 10) as u8 + b'0';
+        lut[i][0] = (i / 1000 % 10) as u8 + b'0';
+
+        i += 1;
+    }
+
+    lut
+};
+
+pub trait BufFormat {
     type Buffer;
 
     fn format(self, buf: &mut Self::Buffer) -> &str;
@@ -45,21 +43,29 @@ pub trait Format {
 
 macro_rules! impl_format_uint {
     ($( $t:ty )*) => {$(
-        impl Format for $t {
+        impl BufFormat for $t {
             type Buffer = IntBuffer;
 
             fn format(mut self, buf: &mut Self::Buffer) -> &str {
-                buf.clear();
+                buf.len = buf.buf.len();
 
-                while self >= 10 {
-                    let rem = self % 100;
-                    self /= 100;
+                while self >= 1000 {
+                    let rem = self % 10000;
+                    self /= 10000;
 
-                    buf.write_2_digits(rem as usize);
+                    buf.len -= 4;
+                    buf.buf[buf.len..buf.len + 4].copy_from_slice(&LUT4[rem as usize])
                 }
-                if self == 0 || buf.is_empty() {
+                while self > 0 {
+                    let rem = self % 10;
+                    self /= 10;
+
                     buf.len -= 1;
-                    buf.buf[buf.len] = self as u8 + b'0';
+                    buf.buf[buf.len] = rem as u8 + b'0';
+                }
+                if buf.len == buf.buf.len() {
+                    buf.len -= 1;
+                    buf.buf[buf.len] = b'0'
                 }
 
                 unsafe { str::from_utf8_unchecked(&buf.buf[buf.len..]) }
@@ -67,11 +73,31 @@ macro_rules! impl_format_uint {
         }
     )*};
 }
-impl_format_uint!( u8 u16 u32 u64 );
+impl_format_uint!( u16 u32 u64 );
+
+impl BufFormat for u8 {
+    type Buffer = IntBuffer;
+
+    fn format(mut self, buf: &mut Self::Buffer) -> &str {
+        buf.len = buf.buf.len();
+
+        while {
+            let rem = self % 10;
+            self /= 10;
+
+            buf.len -= 1;
+            buf.buf[buf.len] = rem + b'0';
+
+            self > 0
+        } {}
+
+        unsafe { str::from_utf8_unchecked(&buf.buf[buf.len..]) }
+    }
+}
 
 macro_rules! impl_format_usize {
     ( $u:ty ) => {
-        impl Format for usize {
+        impl BufFormat for usize {
             type Buffer = IntBuffer;
 
             fn format(self, buf: &mut Self::Buffer) -> &str {
@@ -89,7 +115,7 @@ impl_format_usize!(u16);
 
 macro_rules! impl_format_int {
     ($( $t:ty )*) => {$(
-        impl Format for $t {
+        impl BufFormat for $t {
             type Buffer = IntBuffer;
 
             fn format(self, buf: &mut Self::Buffer) -> &str {
@@ -104,4 +130,19 @@ macro_rules! impl_format_int {
         }
     )*};
 }
-impl_format_int!( i8 i16 i32 i64 isize);
+impl_format_int!( i8 i16 i32 i64 isize );
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn signed() {
+        let mut buf = IntBuffer::new();
+
+        assert_eq!(buf.format(-0i8), "0");
+        assert_eq!(buf.format(-1i8), "-1");
+        assert_eq!(buf.format(i32::MIN), i32::MIN.to_string().as_str());
+        assert_eq!(buf.format(i32::MAX), i32::MAX.to_string().as_str());
+    }
+}
