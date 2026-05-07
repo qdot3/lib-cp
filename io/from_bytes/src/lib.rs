@@ -1,6 +1,5 @@
 //! 参考サイト
 //! - <https://zenn.dev/mizar/articles/fc87d667153080>
-use std::num::IntErrorKind;
 
 /// FIXME: use std::hint::cold_path();
 #[cold]
@@ -8,7 +7,7 @@ const fn cold_path() {}
 
 /// `b"1234567890123456"`を`1234567890123456_u64`にパースする。
 #[inline(always)]
-const fn parse_16_digits(bytes: [u8; 16]) -> Result<u64, IntErrorKind> {
+const fn parse_16_digits(bytes: [u8; 16]) -> Option<u64> {
     let (mut hi, mut lo) = {
         let bytes = bytes.as_chunks::<8>().0;
         // ascii コードの 0x30..=0x39 が数値に対応している
@@ -34,17 +33,17 @@ const fn parse_16_digits(bytes: [u8; 16]) -> Result<u64, IntErrorKind> {
         hi = hi.wrapping_mul((10000 << 32) + 1) >> 32;
         lo = lo.wrapping_mul((10000 << 32) + 1) >> 32;
 
-        Ok(hi * 1_0000_0000 + lo)
+        Some(hi * 1_0000_0000 + lo)
     } else {
         cold_path();
-        Err(IntErrorKind::InvalidDigit)
+        None
     }
 }
 
 /// `b"12345678"`を`12345678_u64`に変換する。
 // inlined due to frequent calls
 #[inline(always)]
-const fn parse_8_digits(bytes: [u8; 8]) -> Result<u64, IntErrorKind> {
+const fn parse_8_digits(bytes: [u8; 8]) -> Option<u64> {
     // ascii コードの 0x30..=0x39 が数値に対応している
     let mut n = u64::from_le_bytes(bytes) ^ 0x3030_3030_3030_3030;
 
@@ -58,16 +57,16 @@ const fn parse_8_digits(bytes: [u8; 8]) -> Result<u64, IntErrorKind> {
         // [5678, 1234] -> [12345678]
         n = n.wrapping_mul((10000 << 32) + 1) >> 32;
 
-        Ok(n)
+        Some(n)
     } else {
         cold_path();
-        Err(IntErrorKind::InvalidDigit)
+        None
     }
 }
 
 /// `b"1234"`を`1234_u32`に変換する。
-#[inline]
-const fn parse_4_digits(bytes: [u8; 4]) -> Result<u32, IntErrorKind> {
+#[inline(always)]
+const fn parse_4_digits(bytes: [u8; 4]) -> Option<u32> {
     // ascii コードの 0x30..=0x39 が数値に対応している
     let mut n = u32::from_le_bytes(bytes) ^ 0x3030_3030;
 
@@ -79,11 +78,68 @@ const fn parse_4_digits(bytes: [u8; 4]) -> Result<u32, IntErrorKind> {
         // [34, 12] -> [1234]
         n = n.wrapping_mul((100 << 16) + 1) >> 16;
 
-        Ok(n)
+        Some(n)
     } else {
         cold_path();
-        Err(IntErrorKind::InvalidDigit)
+        None
     }
+}
+
+#[inline(always)]
+fn parse_lt_8_digits(pre: &[u8]) -> Option<u64> {
+    let n = {
+        let mut bytes = [b'0'; 8];
+        // memcpy回避
+        match pre.len() {
+            1 => bytes[7..].copy_from_slice(&pre),
+            2 => bytes[6..].copy_from_slice(&pre),
+            3 => bytes[5..].copy_from_slice(&pre),
+            4 => bytes[4..].copy_from_slice(&pre),
+            5 => bytes[3..].copy_from_slice(&pre),
+            6 => bytes[2..].copy_from_slice(&pre),
+            7 => bytes[1..].copy_from_slice(&pre),
+            _ => {}
+        };
+        match pre.len() {
+            1 | 2 | 3 | 4 => parse_4_digits(bytes.as_chunks::<4>().0[1])? as u64,
+            5 | 6 | 7 => parse_8_digits(bytes)?,
+            _ => 0,
+        }
+    };
+    Some(n)
+}
+
+#[inline(always)]
+fn parse_lt_16_digits(pre: &[u8]) -> Option<u64> {
+    let n = {
+        let mut bytes = [b'0'; 16];
+        // memcpy回避
+        match pre.len() {
+            1 => bytes[15..].copy_from_slice(&pre),
+            2 => bytes[14..].copy_from_slice(&pre),
+            3 => bytes[13..].copy_from_slice(&pre),
+            4 => bytes[12..].copy_from_slice(&pre),
+            5 => bytes[11..].copy_from_slice(&pre),
+            6 => bytes[10..].copy_from_slice(&pre),
+            7 => bytes[9..].copy_from_slice(&pre),
+            8 => bytes[8..].copy_from_slice(&pre),
+            9 => bytes[7..].copy_from_slice(&pre),
+            10 => bytes[6..].copy_from_slice(&pre),
+            11 => bytes[5..].copy_from_slice(&pre),
+            12 => bytes[4..].copy_from_slice(&pre),
+            13 => bytes[3..].copy_from_slice(&pre),
+            14 => bytes[2..].copy_from_slice(&pre),
+            15 => bytes[1..].copy_from_slice(&pre),
+            _ => {}
+        };
+        match pre.len() {
+            1 | 2 | 3 | 4 => parse_4_digits(bytes.as_chunks::<4>().0[3])? as u64,
+            5 | 6 | 7 | 8 => parse_8_digits(bytes.as_chunks::<8>().0[1])?,
+            9 | 10 | 11 | 12 | 13 | 14 | 15 => parse_16_digits(bytes)?,
+            _ => 0,
+        }
+    };
+    Some(n)
 }
 
 pub trait FromBytes: Sized {
@@ -92,133 +148,196 @@ pub trait FromBytes: Sized {
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err>;
 }
 
-/// byte列を前から順にパースする。
-macro_rules! parse_digits {
-    ( $t:ty, $digits:expr, $mul:tt, $add:ident $(, $overflow:path )* ) => {{
-        let (remainder, chunks) = $digits.as_rchunks::<8>();
-        let mut n = 0 as $t;
+impl FromBytes for u64 {
+    type Err = ();
 
-        if remainder.len() > 4 {
-            let mut digits = [b'0'; 8];
-            digits[8 - remainder.len()..].copy_from_slice(remainder);
-            n = n.$add(parse_8_digits(digits)? as $t) $(.ok_or($overflow)?)*;
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
+        let digits = bytes.strip_prefix(b"+").unwrap_or(bytes);
+
+        if digits.is_empty() {
+            cold_path();
+            return Err(());
+        }
+
+        let (pre, suf) = digits.as_rchunks::<8>();
+        let mut n = parse_lt_8_digits(pre).ok_or(())?;
+
+        let mut of = false;
+        for chunk in suf {
+            let x = n.overflowing_mul(1_0000_0000);
+            n = x.0;
+            of |= x.1;
+
+            let x = n.overflowing_add(parse_8_digits(*chunk).ok_or(())?);
+            n = x.0;
+            of |= x.1;
+        }
+
+        if of {
+            cold_path();
+            Err(())
         } else {
-            let mut digits = [b'0'; 4];
-            digits[4 - remainder.len()..].copy_from_slice(remainder);
-            n = n.$add(parse_4_digits(digits)? as $t) $(.ok_or($overflow)?)*;
+            Ok(n)
         }
-
-        for chunk in chunks {
-            n = n.$mul(1_0000_0000) $(.ok_or($overflow)?)*;
-            n = n.$add(parse_8_digits(*chunk)? as $t) $(.ok_or($overflow)?)*;
-        }
-
-        n
-    }};
-}
-
-fn strip_sign(bytes: &[u8]) -> (bool, &[u8]) {
-    match bytes {
-        [n, ..] if n >> 4 == 3 => (true, bytes),
-        [b'-', digit @ ..] => (false, digit),
-        [b'+', digit @ ..] => (true, digit),
-        _ => (true, bytes),
     }
 }
 
-macro_rules! from_bytes_impl {
-    ($( $t:ty )*) => {$(
-        impl FromBytes for $t {
-            type Err = IntErrorKind;
+impl FromBytes for u128 {
+    type Err = ();
 
-            fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
-                if bytes.is_empty() {
-                    return Err(IntErrorKind::Empty);
-                }
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
+        let digits = bytes.strip_prefix(b"+").unwrap_or(bytes);
 
-                #[allow(unused_comparisons)]
-                let is_signed_ty = <$t>::MIN < 0;
+        if digits.is_empty() {
+            cold_path();
+            return Err(());
+        }
 
-                // 符号は高々１つ
-                let (is_positive, digits) = match bytes {
-                    [b'+' | b'-'] => return Err(IntErrorKind::InvalidDigit),
-                    [b'+', rest @ ..] => (true, rest),
-                    [b'-', rest @ ..] if is_signed_ty => (false, rest),
-                    _ => (true, bytes),
-                };
+        let (pre, suf) = digits.as_rchunks::<16>();
+        let mut n = parse_lt_16_digits(pre).ok_or(())? as u128;
 
-                let never_overflow = {
-                    // 符号に依らない
-                    const MAX_DIGITS_LEN: usize = <$t>::MAX.ilog10() as usize + 1;
-                    const LEADING_BYTE_OF_MAX: u8 =
-                        (<$t>::MAX / (10 as $t).pow(MAX_DIGITS_LEN as u32 - 1)) as u8 + b'0';
+        let mut of = false;
+        for chunk in suf {
+            let x = n.overflowing_mul(1_0000_0000_0000_0000);
+            n = x.0;
+            of |= x.1;
 
-                    // 先頭の b'0' を除去するとオーバーフロー時に早期リターンできるが、エラーなので無視。
-                    (digits.len() < MAX_DIGITS_LEN)
-                        || (digits.len() == MAX_DIGITS_LEN && digits[0] < LEADING_BYTE_OF_MAX)
-                };
+            let x = n.overflowing_add(parse_16_digits(*chunk).ok_or(())? as u128);
+            n = x.0;
+            of |= x.1;
+        }
 
-                let n = if never_overflow {
-                    if is_positive {
-                        parse_digits!($t, digits, wrapping_mul, wrapping_add)
-                    } else {
-                        parse_digits!($t, digits, wrapping_mul, wrapping_sub)
-                    }
-                } else {
-                    if is_positive {
-                        parse_digits!($t, digits, checked_mul, checked_add, IntErrorKind::PosOverflow)
-                    } else {
-                        parse_digits!($t, digits, checked_mul, checked_sub, IntErrorKind::NegOverflow)
-                    }
-                };
+        if of {
+            cold_path();
+            Err(())
+        } else {
+            Ok(n)
+        }
+    }
+}
 
-                Ok(n)
+impl FromBytes for i64 {
+    type Err = ();
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
+        let (is_positive, digits) = match bytes {
+            [b'-', rest @ ..] => (false, rest),
+            [b'+', rest @ ..] | rest => (true, rest),
+        };
+
+        if digits.is_empty() {
+            cold_path();
+            return Err(());
+        }
+
+        let (pre, suf) = digits.as_rchunks::<8>();
+        let mut n = parse_lt_8_digits(pre).ok_or(())? as i64;
+
+        let mut of = false;
+        if is_positive {
+            for chunk in suf {
+                let x = n.overflowing_mul(1_0000_0000);
+                n = x.0;
+                of |= x.1;
+
+                let x = n.overflowing_add(parse_8_digits(*chunk).ok_or(())? as i64);
+                n = x.0;
+                of |= x.1;
+            }
+        } else {
+            n = -n;
+            for chunk in suf {
+                let x = n.overflowing_mul(1_0000_0000);
+                n = x.0;
+                of |= x.1;
+
+                let x = n.overflowing_sub(parse_8_digits(*chunk).ok_or(())? as i64);
+                n = x.0;
+                of |= x.1;
             }
         }
-    )*};
+
+        if of {
+            cold_path();
+            Err(())
+        } else {
+            Ok(n)
+        }
+    }
 }
-from_bytes_impl!( i32 u32 i64 u64 i128 u128 isize usize );
 
-// 最大桁数が８未満だとオーバーフローしてしまう（MIN.abs() = MAX + 1）
-macro_rules! from_bytes_impl_small_unsigned {
-    ($( $t:ty )*) => {$(
-        impl FromBytes for $t {
-            type Err = IntErrorKind;
+impl FromBytes for i128 {
+    type Err = ();
 
-            fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
-                let v = u32::from_bytes(bytes)?;
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
+        let (is_positive, digits) = match bytes {
+            [b'-', rest @ ..] => (false, rest),
+            [b'+', rest @ ..] | rest => (true, rest),
+        };
 
-                if v > <$t>::MAX as u32 {
-                    Err(IntErrorKind::PosOverflow)
-                } else{
-                    Ok(v as $t)
-                }
+        if digits.is_empty() {
+            cold_path();
+            return Err(());
+        }
+
+        let (pre, suf) = digits.as_rchunks::<16>();
+        let mut n = parse_lt_16_digits(pre).ok_or(())? as i128;
+
+        let mut of = false;
+        if is_positive {
+            for chunk in suf {
+                let x = n.overflowing_mul(1_0000_0000_0000_0000);
+                n = x.0;
+                of |= x.1;
+
+                let x = n.overflowing_add(parse_16_digits(*chunk).ok_or(())? as i128);
+                n = x.0;
+                of |= x.1;
+            }
+        } else {
+            n = -n;
+            for chunk in suf {
+                let x = n.overflowing_mul(1_0000_0000_0000_0000);
+                n = x.0;
+                of |= x.1;
+
+                let x = n.overflowing_sub(parse_16_digits(*chunk).ok_or(())? as i128);
+                n = x.0;
+                of |= x.1;
             }
         }
-    )*};
-}
-from_bytes_impl_small_unsigned!( u8 u16 );
 
-macro_rules! from_bytes_impl_small_signed {
-    ($( $t:ty )*) => {$(
-        impl FromBytes for $t {
-            type Err = IntErrorKind;
+        if of {
+            cold_path();
+            Err(())
+        } else {
+            Ok(n)
+        }
+    }
+}
+
+macro_rules! from_bytes_derive {
+    ( $tar:ty as $src:ty) => {
+        impl FromBytes for $tar {
+            type Err = ();
 
             fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
-                let v = i32::from_bytes(bytes)?;
-
-                if v < <$t>::MIN as i32 {
-                    Err(IntErrorKind::NegOverflow)
-                } else if v > <$t>::MAX as i32 {
-                    Err(IntErrorKind::PosOverflow)
-                } else{
-                    Ok(v as $t)
-                }
+                let wide = <$src>::from_bytes(bytes)?;
+                <$tar>::try_from(wide).map_err(|_| ())
             }
         }
-    )*};
+    };
 }
-from_bytes_impl_small_signed!( i8 i16 );
+
+from_bytes_derive!(u8 as u64);
+from_bytes_derive!(u16 as u64);
+from_bytes_derive!(u32 as u64);
+from_bytes_derive!(usize as u64);
+
+from_bytes_derive!(i8 as i64);
+from_bytes_derive!(i16 as i64);
+from_bytes_derive!(i32 as i64);
+from_bytes_derive!(isize as i64);
 
 #[cfg(test)]
 mod tests {
@@ -230,10 +349,21 @@ mod tests {
     fn random() {
         let mut rng = rng();
         for _ in 0..1 << 20 {
-            let n: i64 = rng.random();
+            let n: u64 = rng.random();
             let s = n.to_string().clone();
-            assert_eq!(i64::from_bytes(s.as_bytes()), Ok(n))
+            assert_eq!(u64::from_bytes(s.as_bytes()).ok(), Some(n))
         }
+    }
+
+    #[test]
+    fn empty() {
+        assert_eq!(u64::from_bytes(b"").ok(), None)
+    }
+
+    #[test]
+    fn overflow() {
+        assert!(u64::from_bytes("1".repeat(1000).as_bytes()).is_err());
+        assert!(i64::from_bytes("1".repeat(1000).as_bytes()).is_err());
     }
 
     #[test]
@@ -241,10 +371,10 @@ mod tests {
         macro_rules! min_max {
             ( $( $t:ty )* ) => {$(
                 let s = <$t>::MAX.to_string().clone();
-                assert_eq!(<$t>::from_bytes(s.as_bytes()), Ok(<$t>::MAX));
+                assert_eq!(<$t>::from_bytes(s.as_bytes()).ok(), Some(<$t>::MAX));
 
                 let s = <$t>::MIN.to_string().clone();
-                assert_eq!(<$t>::from_bytes(s.as_bytes()), Ok(<$t>::MIN));
+                assert_eq!(<$t>::from_bytes(s.as_bytes()).ok(), Some(<$t>::MIN));
             )*};
         }
 
