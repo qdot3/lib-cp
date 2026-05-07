@@ -86,30 +86,6 @@ const fn parse_4_digits(bytes: [u8; 4]) -> Option<u32> {
 }
 
 #[inline(always)]
-fn parse_lt_8_digits(pre: &[u8]) -> Option<u64> {
-    let n = {
-        let mut bytes = [b'0'; 8];
-        // memcpy回避
-        match pre.len() {
-            1 => bytes[7..].copy_from_slice(&pre),
-            2 => bytes[6..].copy_from_slice(&pre),
-            3 => bytes[5..].copy_from_slice(&pre),
-            4 => bytes[4..].copy_from_slice(&pre),
-            5 => bytes[3..].copy_from_slice(&pre),
-            6 => bytes[2..].copy_from_slice(&pre),
-            7 => bytes[1..].copy_from_slice(&pre),
-            _ => {}
-        };
-        match pre.len() {
-            1 | 2 | 3 | 4 => parse_4_digits(bytes.as_chunks::<4>().0[1])? as u64,
-            5 | 6 | 7 => parse_8_digits(bytes)?,
-            _ => 0,
-        }
-    };
-    Some(n)
-}
-
-#[inline(always)]
 fn parse_lt_16_digits(pre: &[u8]) -> Option<u64> {
     let n = {
         let mut bytes = [b'0'; 16];
@@ -160,7 +136,25 @@ impl FromBytes for u64 {
         }
 
         let (pre, suf) = digits.as_rchunks::<8>();
-        let mut n = parse_lt_8_digits(pre).ok_or(())?;
+        let mut n = {
+            let mut bytes = [b'0'; 8];
+            // memcpy回避
+            match pre.len() {
+                1 => bytes[7..].copy_from_slice(&pre),
+                2 => bytes[6..].copy_from_slice(&pre),
+                3 => bytes[5..].copy_from_slice(&pre),
+                4 => bytes[4..].copy_from_slice(&pre),
+                5 => bytes[3..].copy_from_slice(&pre),
+                6 => bytes[2..].copy_from_slice(&pre),
+                7 => bytes[1..].copy_from_slice(&pre),
+                _ => {}
+            };
+            match pre.len() {
+                1 | 2 | 3 | 4 => parse_4_digits(bytes.as_chunks::<4>().0[1]).ok_or(())? as u64,
+                5 | 6 | 7 => parse_8_digits(bytes).ok_or(())?,
+                _ => 0,
+            }
+        };
 
         let mut of = false;
         for chunk in suf {
@@ -194,7 +188,34 @@ impl FromBytes for u128 {
         }
 
         let (pre, suf) = digits.as_rchunks::<16>();
-        let mut n = parse_lt_16_digits(pre).ok_or(())? as u128;
+        let mut n = {
+            let mut bytes = [b'0'; 16];
+            // memcpy回避
+            match pre.len() {
+                1 => bytes[15..].copy_from_slice(&pre),
+                2 => bytes[14..].copy_from_slice(&pre),
+                3 => bytes[13..].copy_from_slice(&pre),
+                4 => bytes[12..].copy_from_slice(&pre),
+                5 => bytes[11..].copy_from_slice(&pre),
+                6 => bytes[10..].copy_from_slice(&pre),
+                7 => bytes[9..].copy_from_slice(&pre),
+                8 => bytes[8..].copy_from_slice(&pre),
+                9 => bytes[7..].copy_from_slice(&pre),
+                10 => bytes[6..].copy_from_slice(&pre),
+                11 => bytes[5..].copy_from_slice(&pre),
+                12 => bytes[4..].copy_from_slice(&pre),
+                13 => bytes[3..].copy_from_slice(&pre),
+                14 => bytes[2..].copy_from_slice(&pre),
+                15 => bytes[1..].copy_from_slice(&pre),
+                _ => {}
+            };
+            match pre.len() {
+                1 | 2 | 3 | 4 => parse_4_digits(bytes.as_chunks::<4>().0[3]).ok_or(())? as u128,
+                5 | 6 | 7 | 8 => parse_8_digits(bytes.as_chunks::<8>().0[1]).ok_or(())? as u128,
+                9 | 10 | 11 | 12 | 13 | 14 | 15 => parse_16_digits(bytes).ok_or(())? as u128,
+                _ => 0,
+            }
+        };
 
         let mut of = false;
         for chunk in suf {
@@ -231,7 +252,25 @@ impl FromBytes for i64 {
         }
 
         let (pre, suf) = digits.as_rchunks::<8>();
-        let mut n = parse_lt_8_digits(pre).ok_or(())? as i64;
+        let mut n = {
+            let mut bytes = [b'0'; 8];
+            // memcpy回避
+            match pre.len() {
+                1 => bytes[7..].copy_from_slice(&pre),
+                2 => bytes[6..].copy_from_slice(&pre),
+                3 => bytes[5..].copy_from_slice(&pre),
+                4 => bytes[4..].copy_from_slice(&pre),
+                5 => bytes[3..].copy_from_slice(&pre),
+                6 => bytes[2..].copy_from_slice(&pre),
+                7 => bytes[1..].copy_from_slice(&pre),
+                _ => {}
+            };
+            match pre.len() {
+                1 | 2 | 3 | 4 => parse_4_digits(bytes.as_chunks::<4>().0[1]).ok_or(())? as i64,
+                5 | 6 | 7 => parse_8_digits(bytes).ok_or(())? as i64,
+                _ => 0,
+            }
+        };
 
         let mut of = false;
         if is_positive {
@@ -281,8 +320,34 @@ impl FromBytes for i128 {
         }
 
         let (pre, suf) = digits.as_rchunks::<16>();
-        let mut n = parse_lt_16_digits(pre).ok_or(())? as i128;
-
+        let mut n = {
+            let mut bytes = [b'0'; 16];
+            // memcpy回避
+            match pre.len() {
+                1 => bytes[15..].copy_from_slice(&pre),
+                2 => bytes[14..].copy_from_slice(&pre),
+                3 => bytes[13..].copy_from_slice(&pre),
+                4 => bytes[12..].copy_from_slice(&pre),
+                5 => bytes[11..].copy_from_slice(&pre),
+                6 => bytes[10..].copy_from_slice(&pre),
+                7 => bytes[9..].copy_from_slice(&pre),
+                8 => bytes[8..].copy_from_slice(&pre),
+                9 => bytes[7..].copy_from_slice(&pre),
+                10 => bytes[6..].copy_from_slice(&pre),
+                11 => bytes[5..].copy_from_slice(&pre),
+                12 => bytes[4..].copy_from_slice(&pre),
+                13 => bytes[3..].copy_from_slice(&pre),
+                14 => bytes[2..].copy_from_slice(&pre),
+                15 => bytes[1..].copy_from_slice(&pre),
+                _ => {}
+            };
+            match pre.len() {
+                1 | 2 | 3 | 4 => parse_4_digits(bytes.as_chunks::<4>().0[3]).ok_or(())? as i128,
+                5 | 6 | 7 | 8 => parse_8_digits(bytes.as_chunks::<8>().0[1]).ok_or(())? as i128,
+                9 | 10 | 11 | 12 | 13 | 14 | 15 => parse_16_digits(bytes).ok_or(())? as i128,
+                _ => 0,
+            }
+        };
         let mut of = false;
         if is_positive {
             for chunk in suf {
