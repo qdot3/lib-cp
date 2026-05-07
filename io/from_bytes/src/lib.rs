@@ -85,39 +85,6 @@ const fn parse_4_digits(bytes: [u8; 4]) -> Option<u32> {
     }
 }
 
-#[inline(always)]
-fn parse_lt_16_digits(pre: &[u8]) -> Option<u64> {
-    let n = {
-        let mut bytes = [b'0'; 16];
-        // memcpy回避
-        match pre.len() {
-            1 => bytes[15..].copy_from_slice(&pre),
-            2 => bytes[14..].copy_from_slice(&pre),
-            3 => bytes[13..].copy_from_slice(&pre),
-            4 => bytes[12..].copy_from_slice(&pre),
-            5 => bytes[11..].copy_from_slice(&pre),
-            6 => bytes[10..].copy_from_slice(&pre),
-            7 => bytes[9..].copy_from_slice(&pre),
-            8 => bytes[8..].copy_from_slice(&pre),
-            9 => bytes[7..].copy_from_slice(&pre),
-            10 => bytes[6..].copy_from_slice(&pre),
-            11 => bytes[5..].copy_from_slice(&pre),
-            12 => bytes[4..].copy_from_slice(&pre),
-            13 => bytes[3..].copy_from_slice(&pre),
-            14 => bytes[2..].copy_from_slice(&pre),
-            15 => bytes[1..].copy_from_slice(&pre),
-            _ => {}
-        };
-        match pre.len() {
-            1 | 2 | 3 | 4 => parse_4_digits(bytes.as_chunks::<4>().0[3])? as u64,
-            5 | 6 | 7 | 8 => parse_8_digits(bytes.as_chunks::<8>().0[1])?,
-            9 | 10 | 11 | 12 | 13 | 14 | 15 => parse_16_digits(bytes)?,
-            _ => 0,
-        }
-    };
-    Some(n)
-}
-
 pub trait FromBytes: Sized {
     type Err;
 
