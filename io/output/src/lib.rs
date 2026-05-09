@@ -20,28 +20,28 @@ impl IntBuffer {
         T::format(n, self)
     }
 
+    #[must_use]
     pub fn write_iter<T>(
         &mut self,
         buf: &mut impl Write,
         iter: impl IntoIterator<Item = T>,
         sep: &str,
-    ) -> std::io::Result<usize>
+    ) -> std::io::Result<()>
     where
         T: BufFormat<Buffer = Self>,
     {
         let mut first = true;
-        let mut n = 0;
         for v in iter {
             if first {
                 first = false
             } else {
-                n += buf.write(sep.as_bytes())?;
+                buf.write(sep.as_bytes())?;
             }
 
-            n += buf.write(self.format(v).as_bytes())?;
+            buf.write(self.format(v).as_bytes())?;
         }
 
-        Ok(n)
+        Ok(())
     }
 }
 
