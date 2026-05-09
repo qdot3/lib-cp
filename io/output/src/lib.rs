@@ -61,7 +61,21 @@ static LUT4: [[u8; 4]; 10000] = const {
     lut
 };
 
-pub trait BufFormat {
+mod sealed {
+    pub trait Sealed {}
+
+    macro_rules! seal {
+    ($( $t:ty )*) => {$(
+        impl Sealed for $t {}
+    )*};
+}
+    seal!( i8 u8 i16 u16 i32 u32 i64 u64 isize usize );
+
+    impl<T> Sealed for &T where T: Sealed {}
+    impl<T> Sealed for &mut T where T: Sealed {}
+}
+
+pub trait BufFormat: sealed::Sealed {
     type Buffer;
 
     fn format(self, buf: &mut Self::Buffer) -> &str;
