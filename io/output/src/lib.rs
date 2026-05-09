@@ -107,9 +107,17 @@ mod tests {
     fn signed() {
         let mut buf = IntBuffer::new();
 
-        assert_eq!(buf.format(-0i8), "0");
+        assert_eq!(buf.format(-00i8), "0");
         assert_eq!(buf.format(-1i8), "-1");
         assert_eq!(buf.format(i32::MIN), i32::MIN.to_string().as_str());
         assert_eq!(buf.format(i32::MAX), i32::MAX.to_string().as_str());
+    }
+
+    #[test]
+    fn many() {
+        let mut buf = IntBuffer::new();
+        for i in -50_000..50_000 {
+            assert_eq!(buf.format(i), i.to_string())
+        }
     }
 }
