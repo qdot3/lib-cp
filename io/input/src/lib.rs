@@ -32,7 +32,7 @@ where
         // trim prefix ascii whitespaces
         {
             let buf = self.reader.fill_buf().ok()?;
-            let i = buf.iter().take_while(|b| b.is_ascii_whitespace()).count();
+            let i = buf.iter().position(|b| !b.is_ascii_whitespace())?;
             self.reader.consume(i);
         }
 

@@ -5,10 +5,10 @@ pub struct IntBuffer {
 
 impl IntBuffer {
     pub const fn new() -> Self {
-        Self {
-            buf: [0; _],
-            len: 40,
-        }
+        let buf = [0; _];
+        let len = buf.len();
+
+        Self { buf, len }
     }
 
     pub fn format<T>(&mut self, n: T) -> &str
@@ -49,69 +49,35 @@ macro_rules! impl_format_uint {
             fn format(mut self, buf: &mut Self::Buffer) -> &str {
                 buf.len = buf.buf.len();
 
-                while self >= 1000 {
+                while {
                     let rem = self % 10000;
                     self /= 10000;
 
                     buf.len -= 4;
-                    buf.buf[buf.len..buf.len + 4].copy_from_slice(&LUT4[rem as usize])
-                }
-                while self > 0 {
-                    let rem = self % 10;
-                    self /= 10;
+                    buf.buf[buf.len..buf.len + 4].copy_from_slice(&LUT4[rem as usize]);
 
-                    buf.len -= 1;
-                    buf.buf[buf.len] = rem as u8 + b'0';
-                }
-                if buf.len == buf.buf.len() {
-                    buf.len -= 1;
-                    buf.buf[buf.len] = b'0'
-                }
+                    self > 0
+                } {}
+                let n = u32::from_le_bytes(buf.buf[buf.len..].as_chunks::<4>().0[0]) ^ 0x0030_3030;
+                let offset = n.trailing_zeros() as usize / 8;
+                buf.len += offset;
 
+                // SAFETY: ASCII graphic characters only
                 unsafe { str::from_utf8_unchecked(&buf.buf[buf.len..]) }
             }
         }
     )*};
 }
-impl_format_uint!( u16 u32 u64 );
+impl_format_uint!( u16 u32 u64 usize );
 
 impl BufFormat for u8 {
     type Buffer = IntBuffer;
 
-    fn format(mut self, buf: &mut Self::Buffer) -> &str {
+    fn format(self, buf: &mut Self::Buffer) -> &str {
         buf.len = buf.buf.len();
-
-        while {
-            let rem = self % 10;
-            self /= 10;
-
-            buf.len -= 1;
-            buf.buf[buf.len] = rem + b'0';
-
-            self > 0
-        } {}
-
-        unsafe { str::from_utf8_unchecked(&buf.buf[buf.len..]) }
+        buf.format(self as u16)
     }
 }
-
-macro_rules! impl_format_usize {
-    ( $u:ty ) => {
-        impl BufFormat for usize {
-            type Buffer = IntBuffer;
-
-            fn format(self, buf: &mut Self::Buffer) -> &str {
-                buf.format(self as $u)
-            }
-        }
-    };
-}
-#[cfg(target_pointer_width = "64")]
-impl_format_usize!(u64);
-#[cfg(target_pointer_width = "32")]
-impl_format_usize!(u32);
-#[cfg(target_pointer_width = "16")]
-impl_format_usize!(u16);
 
 macro_rules! impl_format_int {
     ($( $t:ty )*) => {$(
@@ -125,6 +91,7 @@ macro_rules! impl_format_int {
                     buf.buf[buf.len] = b'-';
                 }
 
+                // SAFETY: ASCII graphic characters only
                 unsafe { str::from_utf8_unchecked(&buf.buf[buf.len..]) }
             }
         }

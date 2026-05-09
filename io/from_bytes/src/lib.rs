@@ -95,7 +95,10 @@ impl FromBytes for u64 {
     type Err = ();
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
-        let digits = bytes.strip_prefix(b"+").unwrap_or(bytes);
+        let digits = match bytes {
+            [b'+', rest @ ..] => rest,
+            _ => bytes,
+        };
 
         if digits.is_empty() {
             cold_path();
@@ -147,7 +150,10 @@ impl FromBytes for u128 {
     type Err = ();
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
-        let digits = bytes.strip_prefix(b"+").unwrap_or(bytes);
+        let digits = match bytes {
+            [b'+', rest @ ..] => rest,
+            _ => bytes,
+        };
 
         if digits.is_empty() {
             cold_path();
