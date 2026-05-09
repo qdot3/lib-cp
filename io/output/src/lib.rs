@@ -1,3 +1,5 @@
+use std::io::Write;
+
 pub struct IntBuffer {
     buf: [u8; 40],
     len: usize,
@@ -16,6 +18,30 @@ impl IntBuffer {
         T: BufFormat<Buffer = Self>,
     {
         T::format(n, self)
+    }
+
+    pub fn write_iter<T>(
+        &mut self,
+        buf: &mut impl Write,
+        iter: impl IntoIterator<Item = T>,
+        sep: &str,
+    ) -> std::io::Result<usize>
+    where
+        T: BufFormat<Buffer = Self>,
+    {
+        let mut first = true;
+        let mut n = 0;
+        for v in iter {
+            if first {
+                first = false
+            } else {
+                n += buf.write(sep.as_bytes())?;
+            }
+
+            n += buf.write(self.format(v).as_bytes())?;
+        }
+
+        Ok(n)
     }
 }
 
@@ -39,6 +65,28 @@ pub trait BufFormat {
     type Buffer;
 
     fn format(self, buf: &mut Self::Buffer) -> &str;
+}
+
+impl<T> BufFormat for &T
+where
+    T: Copy + BufFormat,
+{
+    type Buffer = T::Buffer;
+
+    fn format(self, buf: &mut Self::Buffer) -> &str {
+        (*self).format(buf)
+    }
+}
+
+impl<T> BufFormat for &mut T
+where
+    T: Copy + BufFormat,
+{
+    type Buffer = T::Buffer;
+
+    fn format(self, buf: &mut Self::Buffer) -> &str {
+        (*self).format(buf)
+    }
 }
 
 macro_rules! impl_format_uint {
@@ -114,10 +162,11 @@ mod tests {
     }
 
     #[test]
-    fn many() {
+    fn iter() {
         let mut buf = IntBuffer::new();
-        for i in -50_000..50_000 {
-            assert_eq!(buf.format(i), i.to_string())
-        }
+        let mut output = Vec::new();
+
+        buf.write_iter(&mut output, -5..=5, " ").unwrap();
+        assert_eq!(output, b"-5 -4 -3 -2 -1 0 1 2 3 4 5")
     }
 }
