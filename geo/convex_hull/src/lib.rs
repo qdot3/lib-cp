@@ -1,4 +1,4 @@
-use num::{Num, Signed};
+use num_traits::{Num, Signed};
 
 use point::Point2D;
 

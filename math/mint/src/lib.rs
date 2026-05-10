@@ -3,7 +3,8 @@ use std::{
     ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-use num::{integer::ExtendedGcd, Integer, One, Zero};
+use num_integer::{ExtendedGcd, Integer};
+use num_traits::{One, Zero};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Mint<const MOD: u32>(pub u64);

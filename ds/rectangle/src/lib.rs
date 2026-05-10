@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use num::Zero;
+use num_traits::Zero;
 
 #[derive(Debug, Clone)]
 pub struct Rectangle<T> {

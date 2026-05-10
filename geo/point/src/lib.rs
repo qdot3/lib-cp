@@ -4,7 +4,8 @@ use std::{
     ops::{Add, AddAssign, Div, DivAssign, Neg, Sub, SubAssign},
 };
 
-use num::{Integer, Num, Signed};
+use num_integer::Integer;
+use num_traits::{Num, Signed};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Point2D<T> {

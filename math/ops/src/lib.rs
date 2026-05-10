@@ -106,7 +106,7 @@ mod unit {
 }
 
 pub mod ops {
-    use num::Zero;
+    use num_traits::Zero;
 
     use super::*;
 

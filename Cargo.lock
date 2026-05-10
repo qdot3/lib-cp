@@ -30,7 +30,7 @@ version = "0.1.0"
 name = "convex_hull"
 version = "0.1.0"
 dependencies = [
- "num",
+ "num-traits",
  "point",
 ]
 
@@ -182,14 +182,15 @@ dependencies = [
 name = "min_prime_factor"
 version = "0.1.0"
 dependencies = [
- "num",
+ "num-traits",
 ]
 
 [[package]]
 name = "mint"
 version = "0.1.0"
 dependencies = [
- "num",
+ "num-integer",
+ "num-traits",
 ]
 
 [[package]]
@@ -269,7 +270,7 @@ dependencies = [
 name = "ops"
 version = "0.1.0"
 dependencies = [
- "num",
+ "num-traits",
 ]
 
 [[package]]
@@ -328,7 +329,8 @@ dependencies = [
 name = "point"
 version = "0.1.0"
 dependencies = [
- "num",
+ "num-integer",
+ "num-traits",
 ]
 
 [[package]]
@@ -417,7 +419,7 @@ dependencies = [
 name = "rectangle"
 version = "0.1.0"
 dependencies = [
- "num",
+ "num-traits",
 ]
 
 [[package]]
