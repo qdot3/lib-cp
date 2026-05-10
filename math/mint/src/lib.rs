@@ -6,7 +6,7 @@ use std::{
 use num::{integer::ExtendedGcd, Integer, One, Zero};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Mint<const MOD: u32>(u64);
+pub struct Mint<const MOD: u32>(pub u64);
 
 impl<const MOD: u32> Mint<MOD> {
     pub const fn new(x: u32) -> Self {
