@@ -41,7 +41,7 @@ impl<const MOD: u32> Mint<MOD> {
             .then_some(Self(x.rem_euclid(MOD as i64) as u64 % MOD as u64))
     }
 
-    pub const fn const_mul_assign(&mut self, other: Self){
+    pub const fn const_mul_assign(&mut self, other: Self) {
         self.0 = self.0 * other.0 % MOD as u64;
     }
 }
@@ -115,5 +115,14 @@ impl<const MOD: u32> Zero for Mint<MOD> {
 impl<const MOD: u32> One for Mint<MOD> {
     fn one() -> Self {
         Self(1)
+    }
+}
+
+impl<T, const MOD: u32> From<T> for Mint<MOD>
+where
+    T: Into<u32>,
+{
+    fn from(value: T) -> Self {
+        Self::new(value.into())
     }
 }
