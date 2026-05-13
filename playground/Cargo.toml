@@ -18,6 +18,20 @@ thiserror = "2.0.16"
 # my crates
 lib-modulo = "0.8.1"
 
+# crates from <https://github.com/qdot3/segtree>
+segtree = { git = "https://github.com/qdot3/segtree" }
+segtree_dual = { git = "https://github.com/qdot3/segtree" }
+segtree_lazy = { git = "https://github.com/qdot3/segtree" }
+segtree_traits = { git = "https://github.com/qdot3/segtree", package = "traits"}
+
+op_add = { git = "https://github.com/qdot3/segtree" }
+op_min = { git = "https://github.com/qdot3/segtree" }
+op_max = { git = "https://github.com/qdot3/segtree" }
+op_affine = { git = "https://github.com/qdot3/segtree" }
+
+foldable_queue = { git = "https://github.com/qdot3/segtree" }
+foldable_deque = { git = "https://github.com/qdot3/segtree" }
+
 # workspace members
 hilbert_sort = { workspace = true }
 compress.workspace = true
@@ -37,8 +51,8 @@ rmq = { workspace = true }
 
 fenwick = { workspace = true }
 simd_bit = { workspace = true }
-lazy_segtree = { workspace = true }
-segtree = { workspace = true }
+# lazy_segtree = { workspace = true }
+# segtree = { workspace = true }
 union_find = { workspace = true }
 union_find_with_potential = { workspace = true }
 rollback_union_find = { workspace = true }

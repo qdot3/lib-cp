@@ -81,6 +81,22 @@ name = "floor_sum"
 version = "0.1.0"
 
 [[package]]
+name = "foldable_deque"
+version = "0.1.0"
+source = "git+https://github.com/qdot3/segtree#93cc5e0fa53343ad55fa11cb67821fd23f69e5a8"
+dependencies = [
+ "traits",
+]
+
+[[package]]
+name = "foldable_queue"
+version = "0.1.0"
+source = "git+https://github.com/qdot3/segtree#93cc5e0fa53343ad55fa11cb67821fd23f69e5a8"
+dependencies = [
+ "traits",
+]
+
+[[package]]
 name = "fps"
 version = "0.1.0"
 dependencies = [
@@ -267,6 +283,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "op_add"
+version = "0.1.0"
+source = "git+https://github.com/qdot3/segtree#93cc5e0fa53343ad55fa11cb67821fd23f69e5a8"
+dependencies = [
+ "traits",
+]
+
+[[package]]
+name = "op_affine"
+version = "0.1.0"
+source = "git+https://github.com/qdot3/segtree#93cc5e0fa53343ad55fa11cb67821fd23f69e5a8"
+dependencies = [
+ "traits",
+]
+
+[[package]]
+name = "op_max"
+version = "0.1.0"
+source = "git+https://github.com/qdot3/segtree#93cc5e0fa53343ad55fa11cb67821fd23f69e5a8"
+dependencies = [
+ "traits",
+]
+
+[[package]]
+name = "op_min"
+version = "0.1.0"
+source = "git+https://github.com/qdot3/segtree#93cc5e0fa53343ad55fa11cb67821fd23f69e5a8"
+dependencies = [
+ "traits",
+]
+
+[[package]]
 name = "ops"
 version = "0.1.0"
 dependencies = [
@@ -290,19 +338,24 @@ dependencies = [
  "fenwick",
  "fixedbitset",
  "floor_sum",
+ "foldable_deque",
+ "foldable_queue",
  "fps",
  "from_bytes",
  "hilbert_sort",
  "input",
  "itertools",
  "kmp",
- "lazy_segtree",
  "lca",
  "lib-modulo",
  "manacher",
  "min_prime_factor",
  "mint",
  "num",
+ "op_add",
+ "op_affine",
+ "op_max",
+ "op_min",
  "ops",
  "output",
  "point",
@@ -314,11 +367,14 @@ dependencies = [
  "rolling_hash",
  "rustc-hash",
  "scc",
- "segtree",
+ "segtree 0.1.0 (git+https://github.com/qdot3/segtree)",
+ "segtree_dual",
+ "segtree_lazy",
  "simd_bit",
  "sparse_table",
  "suffix_array",
  "thiserror",
+ "traits",
  "tree_dp",
  "union_find",
  "union_find_with_potential",
@@ -465,6 +521,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "segtree"
+version = "0.1.0"
+source = "git+https://github.com/qdot3/segtree#93cc5e0fa53343ad55fa11cb67821fd23f69e5a8"
+dependencies = [
+ "traits",
+]
+
+[[package]]
+name = "segtree_dual"
+version = "0.1.0"
+source = "git+https://github.com/qdot3/segtree#93cc5e0fa53343ad55fa11cb67821fd23f69e5a8"
+dependencies = [
+ "traits",
+]
+
+[[package]]
+name = "segtree_lazy"
+version = "0.1.0"
+source = "git+https://github.com/qdot3/segtree#93cc5e0fa53343ad55fa11cb67821fd23f69e5a8"
+dependencies = [
+ "traits",
+]
+
+[[package]]
 name = "simd_bit"
 version = "0.1.0"
 
@@ -527,6 +607,11 @@ dependencies = [
  "quote",
  "syn 2.0.111",
 ]
+
+[[package]]
+name = "traits"
+version = "0.1.0"
+source = "git+https://github.com/qdot3/segtree#93cc5e0fa53343ad55fa11cb67821fd23f69e5a8"
 
 [[package]]
 name = "tree_dp"
