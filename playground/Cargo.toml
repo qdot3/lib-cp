@@ -22,15 +22,15 @@ lib-modulo = "0.8.1"
 segtree = { git = "https://github.com/qdot3/segtree" }
 segtree_dual = { git = "https://github.com/qdot3/segtree" }
 segtree_lazy = { git = "https://github.com/qdot3/segtree" }
-segtree_traits = { git = "https://github.com/qdot3/segtree", package = "traits"}
+segtree_traits = { git = "https://github.com/qdot3/segtree", package = "traits" }
 
 op_add = { git = "https://github.com/qdot3/segtree" }
 op_min = { git = "https://github.com/qdot3/segtree" }
 op_max = { git = "https://github.com/qdot3/segtree" }
 op_affine = { git = "https://github.com/qdot3/segtree" }
 
-foldable_queue = { git = "https://github.com/qdot3/segtree" }
-foldable_deque = { git = "https://github.com/qdot3/segtree" }
+foldable_queue = { git = "https://github.com/qdot3/segtree", version = "0.2" }
+foldable_deque = { git = "https://github.com/qdot3/segtree", version = "0.2"}
 
 # workspace members
 hilbert_sort = { workspace = true }
