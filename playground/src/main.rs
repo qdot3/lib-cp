@@ -9,6 +9,6 @@ fn main() {
     let mut input: FastInput<std::io::StdinLock<'_>> = FastInput::new(stdin().lock());
     let mut buf = IntBuffer::new();
 
-    bind! { input >> n: usize, mut tx: [(i32, i32); n], }
+    bind! { input >> n: usize, }
 
 }
