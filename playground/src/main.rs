@@ -10,5 +10,4 @@ fn main() {
     let mut buf = IntBuffer::new();
 
     bind! { input >> n: usize, }
-
 }

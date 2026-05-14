@@ -18,7 +18,6 @@ const fn parse_16_digits(bytes: [u8; 16]) -> Option<u64> {
     };
 
     // 上位４ビットが０で下位４ビットが９以下のとき、かつそのときに限り、等号成立
-    // - 7 * 9 < 2^6 < 7 * 10, 7 * 15 = 105 < 2^7
     if (hi | lo | (hi + 0x0606_0606_0606_0606) | (lo + 0x0606_0606_0606_0606))
         & 0xf0f0_f0f0_f0f0_f0f0
         == 0
@@ -41,14 +40,12 @@ const fn parse_16_digits(bytes: [u8; 16]) -> Option<u64> {
 }
 
 /// `b"12345678"`を`12345678_u64`に変換する。
-// inlined due to frequent calls
 #[inline(always)]
 const fn parse_8_digits(bytes: [u8; 8]) -> Option<u64> {
     // ascii コードの 0x30..=0x39 が数値に対応している
     let mut n = u64::from_le_bytes(bytes) ^ 0x3030_3030_3030_3030;
 
     // 上位４ビットが０で下位４ビットが９以下のとき、かつそのときに限り、等号成立
-    // - 7 * 9 < 2^6 < 7 * 10, 7 * 15 = 105 < 2^7
     if (n | (n + 0x0606_0606_0606_0606)) & 0xf0f0_f0f0_f0f0_f0f0 == 0 {
         // [8, 7, 6, 5, 4, 3, 2, 1] -> [78, 56, 34, 12]
         n = (n.wrapping_mul((10 << 8) + 1) >> 8) & 0x00ff_00ff_00ff_00ff;
@@ -71,7 +68,6 @@ const fn parse_4_digits(bytes: [u8; 4]) -> Option<u32> {
     let mut n = u32::from_le_bytes(bytes) ^ 0x3030_3030;
 
     // 上位４ビットが０で下位４ビットが９以下のとき、かつそのときに限り、等号成立
-    // - 7 * 9 < 2^6 < 7 * 10, 7 * 15 = 105 < 2^7
     if (n | n + 0x0606_0606) & 0xf0f0_f0f0 == 0 {
         // [4, 3, 2, 1] -> [34, 12]
         n = (n.wrapping_mul((10 << 8) + 1) >> 8) & 0x00ff_00ff;
@@ -119,11 +115,7 @@ impl FromBytes for u64 {
                 7 => bytes[1..].copy_from_slice(&pre),
                 _ => {}
             };
-            match pre.len() {
-                1 | 2 | 3 | 4 => parse_4_digits(bytes.as_chunks::<4>().0[1]).ok_or(())? as u64,
-                5 | 6 | 7 => parse_8_digits(bytes).ok_or(())?,
-                _ => 0,
-            }
+            parse_8_digits(bytes).ok_or(())?
         };
 
         let mut of = false;
@@ -238,11 +230,7 @@ impl FromBytes for i64 {
                 7 => bytes[1..].copy_from_slice(&pre),
                 _ => {}
             };
-            match pre.len() {
-                1 | 2 | 3 | 4 => parse_4_digits(bytes.as_chunks::<4>().0[1]).ok_or(())? as i64,
-                5 | 6 | 7 => parse_8_digits(bytes).ok_or(())? as i64,
-                _ => 0,
-            }
+            parse_8_digits(bytes).ok_or(())? as i64
         };
 
         let mut of = false;

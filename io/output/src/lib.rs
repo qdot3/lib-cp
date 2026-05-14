@@ -1,5 +1,3 @@
-use std::io::Write;
-
 pub struct IntBuffer {
     buf: [u8; 40],
     len: usize,
@@ -19,32 +17,9 @@ impl IntBuffer {
     {
         T::format(n, self)
     }
-
-    #[must_use]
-    pub fn write_iter<T>(
-        &mut self,
-        buf: &mut impl Write,
-        iter: impl IntoIterator<Item = T>,
-        sep: &str,
-    ) -> std::io::Result<()>
-    where
-        T: BufFormat<Buffer = Self>,
-    {
-        let mut first = true;
-        for v in iter {
-            if first {
-                first = false
-            } else {
-                buf.write(sep.as_bytes())?;
-            }
-
-            buf.write(self.format(v).as_bytes())?;
-        }
-
-        Ok(())
-    }
 }
 
+/// format 4 digits at once. 40 MB.
 static LUT4: [[u8; 4]; 10000] = const {
     let mut lut = [[0; 4]; 10000];
 
@@ -65,10 +40,10 @@ mod sealed {
     pub trait Sealed {}
 
     macro_rules! seal {
-    ($( $t:ty )*) => {$(
-        impl Sealed for $t {}
-    )*};
-}
+        ($( $t:ty )*) => {$(
+            impl Sealed for $t {}
+        )*};
+    }
     seal!( i8 u8 i16 u16 i32 u32 i64 u64 isize usize );
 
     impl<T> Sealed for &T where T: Sealed {}
@@ -174,13 +149,5 @@ mod tests {
         assert_eq!(buf.format(i32::MIN), i32::MIN.to_string().as_str());
         assert_eq!(buf.format(i32::MAX), i32::MAX.to_string().as_str());
     }
-
-    #[test]
-    fn iter() {
-        let mut buf = IntBuffer::new();
-        let mut output = Vec::new();
-
-        buf.write_iter(&mut output, -5..=5, " ").unwrap();
-        assert_eq!(output, b"-5 -4 -3 -2 -1 0 1 2 3 4 5")
-    }
 }
+
