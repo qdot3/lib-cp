@@ -43,6 +43,7 @@ members = [
     "ds/rollback_union_find",
     "ds/simd_bit",
     "algo/hilbert_sort",
+    "io/reader",
 ]
 
 [workspace.package]
@@ -109,3 +110,4 @@ suffix_array = { path = "./string/suffix_array" }
 input = { path = "./io/input" }
 output = { path = "./io/output" }
 from_bytes = { path = "./io/from_bytes" }
+reader = { path = "./io/reader" }
