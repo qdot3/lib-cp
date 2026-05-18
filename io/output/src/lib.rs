@@ -1,3 +1,5 @@
+use std::io::Write;
+
 pub struct IntBuffer {
     buf: [u8; 40],
     len: usize,
@@ -16,6 +18,26 @@ impl IntBuffer {
         T: BufFormat<Buffer = Self>,
     {
         T::format(n, self)
+    }
+
+    pub fn format_iter<T>(
+        &mut self,
+        buf: &mut impl Write,
+        mut iter: impl Iterator<Item = T>,
+        sep: impl AsRef<[u8]>
+    ) -> std::io::Result<()>
+    where
+        T: BufFormat<Buffer = Self>,
+    {
+        if let Some(v) = iter.next() {
+            buf.write(T::format(v, self).as_bytes())?;
+        }
+        while let Some(v) = iter.next() {
+            buf.write(sep.as_ref())?;
+            buf.write(T::format(v, self).as_bytes())?;
+        }
+
+        Ok(())
     }
 }
 

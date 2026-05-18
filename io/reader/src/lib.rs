@@ -168,4 +168,18 @@ impl<const N: usize, R: Read> FastBufReader<N, R> {
         let token = self.next_token().ok()?;
         T::from_bytes(&token).ok()
     }
+
+    #[inline(always)]
+    pub fn parse_next_token_vec<T>(&mut self, n: usize) -> Option<Vec<T>>
+    where
+        T: FromBytes,
+    {
+        let mut ret = Vec::with_capacity(n);
+        for _ in 0..n {
+            let token = self.next_token().ok()?;
+            ret.push(T::from_bytes(&token).ok()?)
+        }
+
+        Some(ret)
+    }
 }
