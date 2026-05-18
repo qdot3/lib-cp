@@ -62,6 +62,7 @@ where
 {
     type Buffer = T::Buffer;
 
+    #[inline(always)]
     fn format(self, buf: &mut Self::Buffer) -> &str {
         (*self).format(buf)
     }
@@ -73,6 +74,7 @@ where
 {
     type Buffer = T::Buffer;
 
+    #[inline(always)]
     fn format(self, buf: &mut Self::Buffer) -> &str {
         (*self).format(buf)
     }
@@ -150,4 +152,3 @@ mod tests {
         assert_eq!(buf.format(i32::MAX), i32::MAX.to_string().as_str());
     }
 }
-
