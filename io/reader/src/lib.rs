@@ -102,11 +102,9 @@ impl<const N: usize, R: Read> FastBufReader<N, R> {
     pub fn next_token(&mut self) -> std::io::Result<Cow<'_, [u8]>> {
         self.skip_until_ascii_whitespace();
 
-        if const { N > 40 } {
-            if self.filled - self.cursor < 40 {
-                self.fill_buf()?;
-                self.skip_until_ascii_whitespace();
-            }
+        if self.filled - self.cursor < 40 {
+            self.fill_buf()?;
+            self.skip_until_ascii_whitespace();
         }
 
         let n = self.position_ascii_whitespace();
