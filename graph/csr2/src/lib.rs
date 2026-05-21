@@ -71,7 +71,7 @@ pub struct CSR<W> {
 
 impl<W> CSR<W> {
     pub fn targets(&self, source: usize) -> &[(usize, W)] {
-        &&self.target[self.partition[source]..self.partition[source + 1]]
+        &self.target[self.partition[source]..self.partition[source + 1]]
     }
 
     pub fn num_node(&self) -> usize {

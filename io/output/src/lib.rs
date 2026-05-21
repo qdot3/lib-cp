@@ -24,7 +24,7 @@ impl IntBuffer {
         &mut self,
         buf: &mut impl Write,
         mut iter: impl Iterator<Item = T>,
-        sep: impl AsRef<[u8]>
+        sep: impl AsRef<[u8]>,
     ) -> std::io::Result<()>
     where
         T: BufFormat<Buffer = Self>,
@@ -66,7 +66,7 @@ mod sealed {
             impl Sealed for $t {}
         )*};
     }
-    seal!( i8 u8 i16 u16 i32 u32 i64 u64 isize usize );
+    seal!( i8 u8 i16 u16 i32 u32 i64 u64 i128 u128 isize usize );
 
     impl<T> Sealed for &T where T: Sealed {}
     impl<T> Sealed for &mut T where T: Sealed {}
@@ -135,8 +135,48 @@ impl BufFormat for u8 {
     type Buffer = IntBuffer;
 
     fn format(self, buf: &mut Self::Buffer) -> &str {
-        buf.len = buf.buf.len();
         buf.format(self as u16)
+    }
+}
+
+impl BufFormat for u128 {
+    type Buffer = IntBuffer;
+
+    fn format(mut self, buf: &mut Self::Buffer) -> &str {
+        buf.len = buf.buf.len();
+
+        let mut x;
+
+        while {
+            x = (self % 1_0000_0000_0000_0000) as u64;
+            self /= 1_0000_0000_0000_0000;
+
+            self > 0
+        } {
+            for _ in 0..4 {
+                let rem = x % 10000;
+                x /= 10000;
+
+                buf.len -= 4;
+                buf.buf[buf.len..buf.len + 4].copy_from_slice(&LUT4[rem as usize]);
+            }
+        }
+
+        while {
+            let rem = x % 10000;
+            x /= 10000;
+
+            buf.len -= 4;
+            buf.buf[buf.len..buf.len + 4].copy_from_slice(&LUT4[rem as usize]);
+
+            x > 0
+        } {}
+        let n = u32::from_le_bytes(buf.buf[buf.len..].as_chunks::<4>().0[0]) ^ 0x0030_3030;
+        let offset = n.trailing_zeros() as usize / 8;
+        buf.len += offset;
+
+        // SAFETY: ASCII graphic characters only
+        unsafe { str::from_utf8_unchecked(&buf.buf[buf.len..]) }
     }
 }
 
@@ -158,7 +198,7 @@ macro_rules! impl_format_int {
         }
     )*};
 }
-impl_format_int!( i8 i16 i32 i64 isize );
+impl_format_int!( i8 i16 i32 i64 i128 isize );
 
 #[cfg(test)]
 mod tests {
