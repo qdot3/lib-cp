@@ -42,7 +42,7 @@ impl<T: Integer + Signed + Copy> Point2D<T> {
         // 2. 同じグループなら面積の符号を見る。
         ((self.y, self.x) < (T::zero(), T::zero()))
             .cmp(&((other.y, other.x) < (T::zero(), T::zero())))
-            .then(self.det(*other).cmp(&T::zero()))
+            .then(other.det(*self).cmp(&T::zero()))
     }
 }
 
