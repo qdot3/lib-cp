@@ -36,12 +36,14 @@ impl<T: Num + Signed> Point2D<T> {
 }
 
 impl<T: Integer + Signed + Copy> Point2D<T> {
-    /// +x 方向からの（反時計回りの）偏角で比較する
+    /// `atan2`でソートする。ただし、`0`は`+0.0`とみなす。
     pub fn cmp_by_argument(&self, other: &Self) -> Ordering {
-        // 1. +x を含む上半面と -x を含む下半面でソート（true > false）
+        // 1. -x を含む上半面と +x を含む下半面でソート（true > false）
         // 2. 同じグループなら面積の符号を見る。
-        ((self.y, self.x) < (T::zero(), T::zero()))
-            .cmp(&((other.y, other.x) < (T::zero(), T::zero())))
+        let zero = (T::zero(), T::zero());
+
+        ((self.y, -self.x).cmp(&zero))
+            .cmp(&((other.y, -other.x).cmp(&zero)))
             .then(other.det(*self).cmp(&T::zero()))
     }
 }
