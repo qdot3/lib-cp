@@ -26,7 +26,7 @@ thiserror = "2.0.16"
 lib-modulo = "0.8.1"
 
 # crates from <https://github.com/qdot3/segtree>
-segtree = { git = "https://github.com/qdot3/segtree", version = "0.2.0" }
+segtree = { git = "https://github.com/qdot3/segtree", version = "0.2.1" }
 segtree_dual = { git = "https://github.com/qdot3/segtree", version = "0.2.0" }
 segtree_lazy = { git = "https://github.com/qdot3/segtree", version = "0.1.1" }
 segtree_traits = { git = "https://github.com/qdot3/segtree", package = "traits", version = "0.1.0" }
