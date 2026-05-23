@@ -21,6 +21,13 @@ impl<T, const D: usize> NDArray<T, D> {
             len,
         }
     }
+
+    pub fn fill(&mut self, value: T)
+    where
+        T: Clone,
+    {
+        self.data.fill(value);
+    }
 }
 
 impl<T, const D: usize> Index<[usize; D]> for NDArray<T, D> {
