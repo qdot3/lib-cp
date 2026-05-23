@@ -1,43 +1,52 @@
 use std::ops::{Index, IndexMut};
 
-use num_traits::Zero;
-
 #[derive(Debug, Clone)]
-pub struct Rectangle<T> {
-    buffer: Vec<T>,
-    width: usize,
+pub struct NDArray<T, const D: usize> {
+    data: Box<[T]>,
+    len: [usize; D],
 }
 
-impl<T: Clone> Rectangle<T> {
-    pub fn new_with(value: T, (width, height): (usize, usize)) -> Rectangle<T> {
+impl<T, const D: usize> NDArray<T, D> {
+    pub fn repeat(len: [usize; D], value: T) -> Self
+    where
+        T: Clone,
+    {
+        let n = len
+            .iter()
+            .try_fold(1_usize, |prod, l| prod.checked_mul(*l))
+            .expect("msg");
+
         Self {
-            buffer: vec![value; width * height],
-            width,
+            data: vec![value; n].into_boxed_slice(),
+            len,
         }
     }
 }
 
-impl<T: Zero> Rectangle<T> {
-    pub fn zero(width: usize, height: usize) -> Self {
-        Self {
-            buffer: std::iter::repeat_with(|| T::zero())
-                .take(width * height)
-                .collect(),
-            width,
-        }
+impl<T, const D: usize> Index<[usize; D]> for NDArray<T, D> {
+    type Output = T;
+
+    fn index(&self, index: [usize; D]) -> &Self::Output {
+        let i = self
+            .len
+            .iter()
+            .zip(index)
+            .try_fold(0_usize, |acc, (l, i)| acc.checked_mul(*l)?.checked_add(i))
+            .expect("msg");
+
+        &self.data[i]
     }
 }
 
-impl<T> Index<usize> for Rectangle<T> {
-    type Output = [T];
+impl<T, const D: usize> IndexMut<[usize; D]> for NDArray<T, D> {
+    fn index_mut(&mut self, index: [usize; D]) -> &mut Self::Output {
+        let i = self
+            .len
+            .iter()
+            .zip(index)
+            .try_fold(0_usize, |acc, (l, i)| acc.checked_mul(*l)?.checked_add(i))
+            .expect("msg");
 
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.buffer[self.width * index..self.width * (index + 1)]
-    }
-}
-
-impl<T> IndexMut<usize> for Rectangle<T> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.buffer[self.width * index..self.width * (index + 1)]
+        &mut self.data[i]
     }
 }

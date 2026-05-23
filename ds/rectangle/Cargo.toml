@@ -6,4 +6,3 @@ edition.workspace = true
 authors.workspace = true
 
 [dependencies]
-num-traits = { workspace = true }
