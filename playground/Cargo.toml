@@ -43,6 +43,7 @@ foldable_deque = { git = "https://github.com/qdot3/segtree", version = "0.2.1" }
 # workspace members
 hilbert_sort = { workspace = true }
 compress.workspace = true
+ska_sort.workspace = true
 
 convex_hull = { workspace = true }
 point = { workspace = true }

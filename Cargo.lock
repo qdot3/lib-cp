@@ -353,6 +353,7 @@ dependencies = [
  "segtree_dual",
  "segtree_lazy",
  "simd_bit",
+ "ska_sort",
  "sparse_table",
  "suffix_array",
  "thiserror",
@@ -532,6 +533,10 @@ dependencies = [
 
 [[package]]
 name = "simd_bit"
+version = "0.1.0"
+
+[[package]]
+name = "ska_sort"
 version = "0.1.0"
 
 [[package]]
