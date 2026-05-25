@@ -29,10 +29,6 @@ version = "0.1.0"
 [[package]]
 name = "convex_hull"
 version = "0.1.0"
-dependencies = [
- "num-traits",
- "point",
-]
 
 [[package]]
 name = "csr"
@@ -367,10 +363,6 @@ dependencies = [
 [[package]]
 name = "point"
 version = "0.1.0"
-dependencies = [
- "num-integer",
- "num-traits",
-]
 
 [[package]]
 name = "ppv-lite86"

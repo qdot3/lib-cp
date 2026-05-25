@@ -1,111 +1,60 @@
-use num_traits::{Num, Signed};
-
 use point::Point2D;
 
-/// # Time Complexity
-///
-/// *O*(*N* log *N*)
-///
-/// # Constraints
-///
-/// - 除算を用いないので、整数型でもよい
-/// - ２点の掛け算でオーバーフローしないこと
-pub fn convex_hull<T: Signed + Num + Copy + Ord>(mut points: Vec<Point2D<T>>) -> ConvexHull<T> {
-    if points.is_empty() {
-        return ConvexHull {
-            upper: Vec::new(),
-            lower: Vec::new(),
-        };
-    }
-
-    // 凸多角形を適当に作り、その内部の点を削除する（Akl–Toussaint heuristic）
-    {
-        // 右回りの凸多角形。点は全て異なる。
-        let mut outer = {
-            let mut octet = [points[0]; 8];
-            for p in points.iter().skip(1) {
-                if octet[0].y < p.y {
-                    octet[0] = *p // top
-                } else if octet[4].y > p.y {
-                    octet[4] = *p // bottom
-                }
-
-                if octet[2].x < p.x {
-                    octet[2] = *p // right
-                } else if octet[6].x > p.x {
-                    octet[6] = *p // left
-                }
-
-                if octet[1].x + octet[1].y < p.x + p.y {
-                    octet[1] = *p // top right
-                } else if octet[5].x + octet[5].y > p.x + p.y {
-                    octet[5] = *p // bottom left
-                }
-
-                if octet[3].x - octet[3].y < p.x - p.y {
-                    octet[3] = *p // bottom right
-                } else if octet[7].x - octet[7].y > p.x - p.y {
-                    octet[7] = *p // top left
-                }
-            }
-            let mut octet = octet.to_vec();
-            octet.dedup();
-            octet
-        };
-
-        // 凸多角形内部の点を削除
-        if outer.len() > 2 {
-            outer.extend_from_within(0..1);
-            points.retain(|p| {
-                // outer の頂点は p から見て時計回りに並んでいる <=> p は outer の内部
-                !outer
-                    .windows(2)
-                    .all(|pts| (pts[0] - *p).det(pts[1] - *p).is_negative())
-            });
-        }
-    }
-
-    // 凸包を求める。双対変換 + CHT の組み合わせで、上下の凸包を求める。
-    // (a, b) -> y = ax + b と双対変換すると、上（下）側の包絡線が上（下）部凸包になる。
-    let points = {
-        points.sort_unstable();
-        points
-    };
-    let mut upper: Vec<Point2D<T>> = Vec::with_capacity(points.len());
-    let mut lower = upper.clone();
-    for (pl, pu) in points
-        .chunk_by(|a, b| a.x == b.x)
-        // y 切片が大きいもの
-        .map(|chunk| (chunk[0], chunk.last().copied().unwrap()))
-    {
-        while upper.len() >= 2 && {
-            let n = upper.len();
-            (upper[n - 1] - upper[n - 2])
-                .det(pu - upper[n - 2])
-                .is_positive()
-        } {
-            upper.pop();
-        }
-        upper.push(pu);
-
-        while lower.len() >= 2 && {
-            let n = lower.len();
-            (lower[n - 1] - lower[n - 2])
-                .det(pl - lower[n - 2])
-                .is_negative()
-        } {
-            lower.pop();
-        }
-        lower.push(pl);
-    }
-
-    ConvexHull { upper, lower }
+pub struct ConvexHull {
+    pub upper: Vec<Point2D>,
+    pub lower: Vec<Point2D>,
 }
 
-#[derive(Debug, Clone)]
-pub struct ConvexHull<T> {
-    /// 上側凸包。x について昇順に点をもつ
-    pub upper: Vec<Point2D<T>>,
-    /// 下側凸包。x について昇順に点をもつ
-    pub lower: Vec<Point2D<T>>,
+impl ConvexHull {
+    /// Computes the convex hull of `points`.
+    ///
+    /// The endpoints of `upper` and `lower` may overlap.
+    ///
+    /// # Time complexity
+    ///
+    /// O(N log N)
+    pub fn new(mut points: Vec<Point2D>) -> Self {
+        // Verified with <https://judge.yosupo.jp/problem/static_convex_hull>
+        if points.is_empty() {
+            return ConvexHull {
+                upper: Vec::new(),
+                lower: Vec::new(),
+            };
+        }
+
+        let mut upper = Vec::with_capacity(points.len());
+        let mut lower = Vec::with_capacity(points.len());
+
+        points.sort_unstable_by_key(|p| p.x);
+        for [u, l] in points.chunk_by(|a, b| a.x == b.x).map(|chunk| {
+            let [mut u, mut l] = [chunk[0]; 2];
+            for p in chunk.iter().skip(1) {
+                if u.y < p.y {
+                    u = *p
+                } else if l.y > p.y {
+                    l = *p
+                }
+            }
+            [u, l]
+        }) {
+            while upper.len() >= 2 && {
+                let n = upper.len();
+                Point2D::direction(&upper[n - 2], &upper[n - 1], &u).is_ge()
+            } {
+                upper.pop();
+            }
+            upper.push(u);
+
+            while lower.len() >= 2 && {
+                let n = lower.len();
+                Point2D::direction(&lower[n - 2], &lower[n - 1], &l).is_le()
+            } {
+                lower.pop();
+            }
+
+            lower.push(l);
+        }
+
+        ConvexHull { upper, lower }
+    }
 }

@@ -1,120 +1,49 @@
-use std::{
-    cmp::Ordering,
-    fmt::Debug,
-    ops::{Add, AddAssign, Div, DivAssign, Neg, Sub, SubAssign},
-};
-
-use num_integer::Integer;
-use num_traits::{Num, Signed};
-
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Point2D<T> {
-    pub x: T,
-    pub y: T,
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Point2D {
+    pub x: i32,
+    pub y: i32,
 }
 
-impl<T> Point2D<T> {
-    pub fn new(x: T, y: T) -> Self {
+impl Point2D {
+    pub const fn new(x: i32, y: i32) -> Self {
         Self { x, y }
     }
-}
 
-impl<T: Num + Signed> Point2D<T> {
-    /// ２つのベクトルがつくる平行四辺形の符号付き面積を計算する
+    pub const fn dot(&self, other: &Self) -> i64 {
+        self.x as i64 * other.x as i64 + self.y as i64 * other.y as i64
+    }
+
+    pub const fn cross(&self, other: &Self) -> i64 {
+        self.x as i64 * other.y as i64 - self.y as i64 * other.x as i64
+    }
+
+    /// Returns the turning direction of the path `a -> b -> c`.
     ///
-    /// - `> 0`: 反時計回り
-    /// - `< 0`: 時計回り
-    /// - `= 0`: 平行・反平行
-    pub fn det(self, other: Self) -> T {
-        self.x * other.y - self.y * other.x
+    /// | `Ordering` | Orientation        |
+    /// |------------|--------------------|
+    /// | `Greater`  | counterclockwise   |
+    /// | `Equal`    | collinear          |
+    /// | `Less`     | clockwise          |
+    pub fn direction(a: &Self, b: &Self, c: &Self) -> std::cmp::Ordering {
+        // Verified with <https://judge.yosupo.jp/problem/count_points_in_triangle>
+        let p = {
+            let lhs = b.x as i64 - a.x as i64;
+            let rhs = c.y as i64 - a.y as i64;
+            lhs as i128 * rhs as i128
+        };
+        let q = {
+            let lhs = c.x as i64 - a.x as i64;
+            let rhs = b.y as i64 - a.y as i64;
+            lhs as i128 * rhs as i128
+        };
+
+        p.cmp(&q)
     }
 
-    /// ２つのベクトルの内積をとる
-    pub fn dot(self, other: Self) -> T {
-        self.x * other.x + self.y * other.y
-    }
-}
-
-impl<T: Integer + Signed + Copy> Point2D<T> {
-    /// `atan2`でソートする。ただし、`0`は`+0.0`とみなす。
-    pub fn cmp_by_argument(&self, other: &Self) -> Ordering {
-        // 1. -x を含む上半面と +x を含む下半面でソート（true > false）
-        // 2. 同じグループなら面積の符号を見る。
-        let zero = (T::zero(), T::zero());
-
-        ((self.y, -self.x).cmp(&zero))
-            .cmp(&((other.y, -other.x).cmp(&zero)))
-            .then(other.det(*self).cmp(&T::zero()))
-    }
-}
-
-impl<T> From<(T, T)> for Point2D<T> {
-    fn from((x, y): (T, T)) -> Self {
-        Self { x, y }
-    }
-}
-
-impl<T: Add<Output = T>> Add for Point2D<T> {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        Self {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y,
-        }
-    }
-}
-
-impl<T: AddAssign> AddAssign for Point2D<T> {
-    fn add_assign(&mut self, rhs: Self) {
-        self.x += rhs.x;
-        self.y += rhs.y;
-    }
-}
-
-impl<T: Sub<Output = T>> Sub for Point2D<T> {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self {
-            x: self.x - rhs.x,
-            y: self.y - rhs.y,
-        }
-    }
-}
-
-impl<T: SubAssign> SubAssign for Point2D<T> {
-    fn sub_assign(&mut self, rhs: Self) {
-        self.x -= rhs.x;
-        self.y -= rhs.y;
-    }
-}
-
-impl<T: Div<Output = T> + Clone> Div<T> for Point2D<T> {
-    type Output = Self;
-
-    fn div(self, rhs: T) -> Self::Output {
-        Self {
-            x: self.x / rhs.clone(),
-            y: self.y / rhs,
-        }
-    }
-}
-
-impl<T: DivAssign + Clone> DivAssign<T> for Point2D<T> {
-    fn div_assign(&mut self, rhs: T) {
-        self.x /= rhs.clone();
-        self.y /= rhs;
-    }
-}
-
-impl<T: Neg<Output = T>> Neg for Point2D<T> {
-    type Output = Self;
-
-    fn neg(self) -> Self::Output {
-        Self {
-            x: -self.x,
-            y: -self.y,
-        }
+    pub fn cmp_by_atan2(&self, other: &Self) -> std::cmp::Ordering {
+        // Verified with <https://judge.yosupo.jp/problem/sort_points_by_argument>
+        (self.y.cmp(&0).then(0.cmp(&self.x)))
+            .cmp(&other.y.cmp(&0).then(0.cmp(&other.x)))
+            .then_with(|| (other.x as i64 * self.y as i64).cmp(&(other.y as i64 * self.x as i64)))
     }
 }
