@@ -481,6 +481,9 @@ dependencies = [
 [[package]]
 name = "rolling_hash"
 version = "0.1.0"
+dependencies = [
+ "lib-modulo",
+]
 
 [[package]]
 name = "rustc-hash"

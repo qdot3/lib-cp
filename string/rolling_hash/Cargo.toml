@@ -6,3 +6,4 @@ edition.workspace = true
 authors.workspace = true
 
 [dependencies]
+lib-modulo = "0.8.1"

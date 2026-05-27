@@ -1,139 +1,80 @@
 use std::{marker::PhantomData, ops::RangeBounds};
 
-pub trait SupportedPrime {}
-
-pub struct Prime<const P: u64>;
-
-impl<const P: u64> Prime<P>
-where
-    Self: SupportedPrime,
-{
-    #[inline]
-    const fn mul_mod(a: u64, b: u64) -> u64 {
-        let exp = P.ilog2() as u64 + 1;
-        let diff = (1 << exp) - P;
-        assert!(2 + diff < 1 << (63 - exp));
-
-        let l_size = exp.div_ceil(2);
-        let l_mask = (1 << l_size) - 1;
-
-        let (ua, la) = (a >> l_size, a & l_mask);
-        let (ub, lb) = (b >> l_size, b & l_mask);
-        let m = ua * lb + ub * la;
-        let (um, lm) = (m >> l_size, m & l_mask);
-
-        let prod = (ua * ub + um) * (1 + (exp & 1)) * diff + (lm << l_size) + la * lb;
-        prod % P
-    }
-}
-
-macro_rules! supported_prime_impl {
-    ($n:literal; $( (1 << $exp:literal) - $diff:literal),*$(,)?) => {
-        /// Large prime numbers that is suitable for [`RollingHasher`].
-        pub const PRIMES: [u64; $n] = [$( { (1 << $exp) - $diff } ),*];
-
-        $(
-            impl SupportedPrime for Prime<{ (1 << $exp) - $diff }> {}
-        )*
-    };
-}
-
-supported_prime_impl! {
-    // the number of prime numbers. 10 will be sufficient.
-    5;
-    // # Constraints
-    //
-    // - P = 2^EXP - DIFF >= 2^56
-    // - EXP <= 61
-    // - DIFF + 2 < 2^(63 - EXP)
-    //
-    // 2^57 - x, x < 2^8 = 64
-    (1 << 57) - 49,
-    (1 << 57) - 25,
-    (1 << 57) - 13,
-    // 2^58 - x, x < 2^5 = 32
-    (1 << 58) - 27,
-    // the largest prime number
-    (1 << 61) - 1,
-}
+use lib_modulo::{Modulus64, Raw64};
 
 #[derive(Debug, Clone)]
-pub struct RollingHash<const P: u64, T>
+pub struct RollingHash<T>
 where
-    Prime<P>: SupportedPrime,
-{
-    /// prefix[i] = hash(S[..i]) とする。とくに、prefix[0] = 0（加法単位元）
-    prefix: Vec<u64>,
-    /// pow_base[i] = base.pow(i)
-    pow_base: Vec<u64>,
-    base: u64,
-
-    data_type: PhantomData<T>,
-}
-
-impl<const P: u64, T> RollingHash<P, T>
-where
-    Prime<P>: SupportedPrime,
     T: Into<u64>,
 {
-    /// 基数には十分大きな乱数を選ぶこと。
-    ///
-    /// # Time Complexity
-    ///
-    /// *Θ*(*N*)
-    pub fn new(base: u64, str: &[T]) -> Self
-    where
-        T: Into<u64> + Clone,
-    {
-        let mut prefix = Vec::with_capacity(str.len() + 1);
-        let mut pow_base = prefix.clone();
+    // 1-based indexing. 0th node is `0`.
+    hash: Vec<Raw64>,
+    base: Vec<Raw64>,
+    modulus: Modulus64,
+    ch_ty: PhantomData<T>,
+}
 
-        prefix.push(0);
-        pow_base.push(1);
-        let base = base % P;
-        for (i, s) in str.into_iter().enumerate() {
-            prefix.push((Prime::<P>::mul_mod(prefix[i], base) + s.clone().into()) % P);
-            pow_base.push(Prime::<P>::mul_mod(pow_base[i], base));
-        }
+impl<T> RollingHash<T>
+where
+    T: Into<u64>,
+{
+    pub fn with_capacity(base: u64, odd_modulus: u64, capacity: usize) -> Self {
+        let modulus = Modulus64::new(odd_modulus);
+
+        let mut vec_base = Vec::with_capacity(capacity + 1);
+        vec_base.push(modulus.residue(1).into_raw());
+        vec_base.push(modulus.residue(base).into_raw());
+
+        let mut hash = Vec::with_capacity(capacity + 1);
+        hash.push(modulus.residue(0).into_raw());
 
         Self {
-            prefix,
-            pow_base,
-            base,
-            data_type: PhantomData,
+            hash,
+            base: vec_base,
+            modulus,
+            ch_ty: PhantomData,
         }
     }
 
-    pub fn push(&mut self, value: T) {
-        assert_eq!(self.prefix.len(), self.pow_base.len());
+    pub fn push(&mut self, ch: T) {
+        let ch = self.modulus.residue(ch.into());
 
-        let i = self.prefix.len() - 1;
-        self.prefix.push((Prime::<P>::mul_mod(self.prefix[i], self.base) + value.into()) % P);
-        self.pow_base.push(Prime::<P>::mul_mod(self.pow_base[i], self.base));
+        let hash = if let Some(&last) = self.hash.last() {
+            self.base[1].into_residue(&self.modulus) * last + ch
+        } else {
+            ch
+        };
+        self.hash.push(hash.into_raw());
     }
 
-    /// 部分文字列のハッシュ値を返す
-    ///
-    /// # Time Complexity
-    ///
-    /// *Θ*(1)
-    pub fn get_hash_value<R>(&self, range: R) -> u64
+    pub fn get_hash_of_slice<R>(&mut self, range: R) -> Option<Raw64>
     where
         R: RangeBounds<usize>,
     {
+        // (Bound::Exclude(l), Bounds::Include(r))
         let l = match range.start_bound() {
             std::ops::Bound::Included(l) => *l,
-            std::ops::Bound::Excluded(l) => l + 1,
+            std::ops::Bound::Excluded(l) => l.checked_sub(1)?,
             std::ops::Bound::Unbounded => 0,
         };
         let r = match range.end_bound() {
-            std::ops::Bound::Included(r) => r + 1,
+            std::ops::Bound::Included(r) => r.checked_add(1)?,
             std::ops::Bound::Excluded(r) => *r,
-            std::ops::Bound::Unbounded => self.prefix.len() - 1,
+            std::ops::Bound::Unbounded => self.hash.len().checked_sub(1)?,
         };
 
-        // P < 2^61
-        let hash = self.prefix[r] + P - Prime::<P>::mul_mod(self.prefix[l], self.pow_base[r - l]);
-        hash % P
+        let w = r.checked_sub(l)?;
+
+        while self.base.len() <= w {
+            static MSG: &str = "this is a bug. `self.base.len() >= 2` must hold";
+
+            let last = self.base.last().expect(MSG).into_residue(&self.modulus);
+            let next = last * *self.base.get(1).expect(MSG);
+            self.base.push(next.into_raw());
+        }
+        let pow_base = self.base[w].into_residue(&self.modulus);
+
+        let hash = *self.hash.get(r)? - *self.hash.get(l)? * pow_base;
+        Some(hash.into_raw())
     }
 }
