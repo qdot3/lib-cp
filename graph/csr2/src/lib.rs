@@ -14,6 +14,12 @@ impl<W> Edge<W> {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct OutEdge<W> {
+    pub target: usize,
+    pub weight: W,
+}
+
 #[derive(Debug)]
 pub struct Directed;
 
@@ -111,7 +117,7 @@ impl<W, G> CSRBuilder<W, G> {
             } in edges
             {
                 cnt[source] -= 1;
-                uninit[cnt[source] as usize].write((target, weight));
+                uninit[cnt[source] as usize].write(OutEdge { target, weight });
             }
         }
         // SAFETY:
@@ -130,34 +136,46 @@ impl<W, G> CSRBuilder<W, G> {
 
 #[derive(Debug, Clone)]
 pub struct CSR<W, G> {
-    target: Vec<(usize, W)>,
+    target: Vec<OutEdge<W>>,
     partition: Vec<usize>,
 
     graph_ty: PhantomData<G>,
 }
 
-pub trait Graph {
-    type Weight;
-
-    fn edges(&self, source: usize) -> &[(usize, Self::Weight)];
-
-    fn num_nodes(&self) -> usize;
-    fn num_edges(&self) -> usize;
-}
-
-impl<W, G> Graph for CSR<W, G> {
-    type Weight = W;
-
-    fn edges(&self, source: usize) -> &[(usize, Self::Weight)] {
+impl<W, G> CSR<W, G> {
+    pub fn out_edges(&self, source: usize) -> &[OutEdge<W>] {
         &self.target[self.partition[source]..self.partition[source + 1]]
     }
 
-    fn num_nodes(&self) -> usize {
+    pub fn nth_edge(&self, source: usize, nth: usize) -> Option<OutEdge<&W>> {
+        if let Some(e) = self.out_edges(source).get(nth) {
+            Some(OutEdge {
+                target: e.target,
+                weight: &e.weight,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn nth_edge_mut(&mut self, source: usize, nth: usize) -> Option<OutEdge<&mut W>> {
+        let edges = &mut self.target[self.partition[source]..self.partition[source + 1]];
+        if let Some(e) = edges.get_mut(nth) {
+            Some(OutEdge {
+                target: e.target,
+                weight: &mut e.weight,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn num_nodes(&self) -> usize {
         // `partition` has at least one element.
         self.partition.len() - 1
     }
 
-    fn num_edges(&self) -> usize {
+    pub fn num_edges(&self) -> usize {
         self.target.len()
     }
 }
@@ -199,7 +217,7 @@ impl<W> CSR<W, Directed> {
             cnt.inc(i);
             stack.push((i, 0));
             while let Some((src, nth)) = stack.pop() {
-                if let Some(tar) = self.edges(src).get(nth).map(|v| v.0) {
+                if let Some(tar) = self.nth_edge(src, nth).map(|v| v.target) {
                     stack.push((src, nth + 1));
 
                     match cnt.get(tar) {
@@ -217,10 +235,11 @@ impl<W> CSR<W, Directed> {
                                 .expect("loop is detected");
 
                             let iter = stack.into_iter().skip(i).map(|(source, nth)| {
-                                let (tar, weight) = &self.edges(source)[nth - 1];
+                                let &OutEdge { target, weight } =
+                                    &self.nth_edge(source, nth - 1).unwrap();
                                 Edge {
                                     source,
-                                    target: *tar,
+                                    target,
                                     weight,
                                 }
                             });
@@ -294,7 +313,7 @@ pub mod scc {
                 scc.push(i);
 
                 while let Some((v, p, nth)) = stack.pop() {
-                    if let Some(&(c, _)) = csr.edges(v).get(nth) {
+                    if let Some(OutEdge { target: c, .. }) = csr.nth_edge(v, nth) {
                         stack.push((v, p, nth + 1));
 
                         if ord_low[c].0 == INF {
@@ -356,7 +375,6 @@ pub mod scc {
 }
 
 pub mod search {
-
     use super::*;
     struct BitSet(Vec<usize>);
 
@@ -386,21 +404,15 @@ pub mod search {
         Revisit(Edge<W>),
     }
 
-    pub struct DFS<'a, G>
-    where
-        G: Graph,
-    {
-        graph: &'a G,
+    pub struct DFS<W, G> {
+        pub graph: CSR<W, G>,
 
         stack: Vec<usize>,
         visited: BitSet,
     }
 
-    impl<G> DFS<'_, G>
-    where
-        G: Graph,
-    {
-        pub fn new(graph: &G) -> DFS<'_, G> {
+    impl<W> DFS<W, Directed> {
+        pub fn new(graph: CSR<W, Directed>) -> Self {
             let stack = Vec::with_capacity(graph.num_nodes() * 2);
             let visited = BitSet::new(graph.num_nodes());
 
@@ -422,43 +434,50 @@ pub mod search {
             self.visited.get(i)
         }
 
-        pub fn next(&mut self) -> Option<Traverse<&G::Weight>> {
+        pub fn next(&mut self) -> Option<Traverse<&mut W>> {
             let Self {
                 graph,
                 stack,
                 visited,
             } = self;
 
-            let [source, edge_idx] = stack.last_chunk_mut::<2>()?;
-            if let Some((target, weight)) = graph.edges(*source).get(*edge_idx) {
-                *edge_idx += 1;
+            let [source, nth] = stack.last_chunk_mut::<2>()?;
+
+            // hack the borrow checker. see <https://docs.rs/polonius-the-crab/latest/polonius_the_crab/index.html>
+            if graph.nth_edge_mut(*source, *nth).is_some() {
+                let OutEdge { target, weight } = graph.nth_edge_mut(*source, *nth).unwrap();
+                *nth += 1;
 
                 let e = Edge {
                     source: *source,
-                    target: *target,
+                    target,
                     weight,
                 };
 
-                let t = if visited.get(*target) {
-                    Traverse::Revisit(e)
+                if visited.get(target) {
+                    return Some(Traverse::Revisit(e));
                 } else {
                     visited.set(*source);
-                    stack.extend([*target, 0]);
-                    Traverse::Visit(e)
+                    stack.extend([target, 0]);
+                    return Some(Traverse::Visit(e));
+                }
+            } else {
+                stack.pop();
+                stack.pop();
+
+                let &[parent, nth] = stack.last_chunk::<2>()?;
+                let OutEdge { target, weight } = graph
+                    .nth_edge_mut(parent, nth - 1)
+                    .expect("this edge has already been passed.");
+
+                let e = Edge {
+                    source: parent,
+                    target,
+                    weight,
                 };
-                return Some(t);
+
+                return Some(Traverse::Leave(e));
             }
-
-            stack.pop();
-            stack.pop();
-
-            let &[parent, edge_idx] = stack.last_chunk::<2>()?;
-            let e = Edge {
-                source: parent,
-                target: graph.edges(parent)[edge_idx - 1].0,
-                weight: &graph.edges(parent)[edge_idx - 1].1,
-            };
-            Some(Traverse::Leave(e))
         }
     }
 }
