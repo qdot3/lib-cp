@@ -140,7 +140,9 @@ pub trait Graph {
     type Weight;
 
     fn edges(&self, source: usize) -> &[(usize, Self::Weight)];
+
     fn num_nodes(&self) -> usize;
+    fn num_edges(&self) -> usize;
 }
 
 impl<W, G> Graph for CSR<W, G> {
@@ -154,10 +156,10 @@ impl<W, G> Graph for CSR<W, G> {
         // `partition` has at least one element.
         self.partition.len() - 1
     }
-}
 
-impl<W> CSR<W, Directed> {
-    pub fn scc(&self) {}
+    fn num_edges(&self) -> usize {
+        self.target.len()
+    }
 }
 
 impl<W> CSR<W, Directed> {
@@ -235,116 +237,228 @@ impl<W> CSR<W, Directed> {
     }
 }
 
-pub struct SCC {
-    scc: Vec<usize>,
-    partition: Vec<usize>,
-}
+pub mod scc {
+    use super::*;
 
-impl SCC {
-    #[must_use]
-    pub fn new<W>(csr: &CSR<W, Directed>) -> Self {
-        struct BitSet {
-            block: Vec<usize>,
-        }
+    pub struct SCC {
+        scc: Vec<usize>,
+        partition: Vec<usize>,
+    }
 
-        impl BitSet {
-            const B: usize = usize::BITS as usize;
+    impl SCC {
+        #[must_use]
+        pub fn new<W>(csr: &CSR<W, Directed>) -> Self {
+            struct BitSet {
+                block: Vec<usize>,
+            }
 
-            fn new(n: usize) -> Self {
-                Self {
-                    block: vec![0; n.div_ceil(Self::B)],
+            impl BitSet {
+                const B: usize = usize::BITS as usize;
+
+                fn new(n: usize) -> Self {
+                    Self {
+                        block: vec![0; n.div_ceil(Self::B)],
+                    }
+                }
+
+                fn is_false(&self, i: usize) -> bool {
+                    let (b, i) = (i / Self::B, i % Self::B);
+                    (self.block[b] >> i) & 1 == 0
+                }
+
+                fn set(&mut self, i: usize) {
+                    let (b, i) = (i / Self::B, i % Self::B);
+                    self.block[b] |= 1 << i
                 }
             }
 
-            fn get(&self, i: usize) -> bool {
-                let (b, i) = (i / Self::B, i % Self::B);
-                (self.block[b] >> i) & 1 == 1
-            }
+            const INF: usize = !0;
 
-            fn set(&mut self, i: usize) {
-                let (b, i) = (i / Self::B, i % Self::B);
-                self.block[b] |= 1 << i
-            }
-        }
+            let mut stack = Vec::with_capacity(csr.num_nodes());
+            let mut ord_low = vec![(INF, INF); csr.num_nodes()];
+            let mut removed = BitSet::new(csr.num_nodes());
 
-        const INF: usize = !0;
+            let mut scc = Vec::with_capacity(csr.num_nodes());
+            let mut partition = Vec::with_capacity(csr.num_nodes());
 
-        let mut stack = Vec::with_capacity(csr.num_nodes());
-        let mut ord_low = vec![(INF, INF); csr.num_nodes()];
-        let mut removed = BitSet::new(csr.num_nodes());
+            let mut order = 0;
+            let mut cursor = csr.num_nodes();
+            for i in 0..csr.num_nodes() {
+                if ord_low[i].0 != INF {
+                    continue;
+                }
 
-        let mut scc = Vec::with_capacity(csr.num_nodes());
-        let mut partition = Vec::with_capacity(csr.num_nodes());
+                stack.push((i, i, 0));
+                ord_low[i] = (order, order);
+                order += 1;
+                scc.push(i);
 
-        let mut order = 0;
-        let mut cursor = csr.num_nodes();
-        for i in 0..csr.num_nodes() {
-            if ord_low[i].0 != INF {
-                continue;
-            }
+                while let Some((v, p, nth)) = stack.pop() {
+                    if let Some(&(c, _)) = csr.edges(v).get(nth) {
+                        stack.push((v, p, nth + 1));
 
-            stack.push((i, i, 0));
-            ord_low[i] = (order, order);
-            order += 1;
-            scc.push(i);
+                        if ord_low[c].0 == INF {
+                            ord_low[c] = (order, order);
+                            order += 1;
+                            scc.push(c);
 
-            while let Some((v, p, nth)) = stack.pop() {
-                if let Some(&(c, _)) = csr.edges(v).get(nth) {
-                    stack.push((v, p, nth + 1));
+                            stack.push((c, v, 0));
+                        } else if removed.is_false(c) {
+                            ord_low[v].1 = ord_low[v].1.min(ord_low[c].0)
+                        }
+                    } else {
+                        ord_low[p].1 = ord_low[p].1.min(ord_low[v].1);
 
-                    if ord_low[c].0 == INF {
-                        ord_low[c] = (order, order);
-                        order += 1;
-                        scc.push(c);
+                        if removed.is_false(v) && {
+                            let (ord, low) = ord_low[v];
+                            ord == low
+                        } {
+                            // `v` is the representative node of the scc
 
-                        stack.push((c, v, 0));
-                    } else if !removed.get(c) {
-                        ord_low[v].1 = ord_low[v].1.min(ord_low[c].0)
-                    }
-                } else {
-                    ord_low[p].1 = ord_low[p].1.min(ord_low[v].1);
+                            partition.push(cursor);
+                            while let Some(u) = scc.pop() {
+                                cursor -= 1;
+                                removed.set(u);
 
-                    if !removed.get(v) && {
-                        let (ord, low) = ord_low[v];
-                        ord == low
-                    } {
-                        // `v` is the representative node of the scc
+                                let i = cursor - scc.len();
+                                scc.spare_capacity_mut()[i].write(u);
 
-                        partition.push(cursor);
-                        while let Some(u) = scc.pop() {
-                            cursor -= 1;
-                            removed.set(u);
-
-                            let i = cursor - scc.len();
-                            scc.spare_capacity_mut()[i].write(u);
-
-                            if u == v {
-                                break;
+                                if u == v {
+                                    break;
+                                }
                             }
                         }
                     }
                 }
             }
+            assert_eq!(cursor, 0);
+
+            // SAFETY: all elements have been initialized
+            unsafe { scc.set_len(csr.num_nodes()) };
+            partition.push(0);
+
+            Self { scc, partition }
         }
-        assert_eq!(cursor, 0);
 
-        // SAFETY: all elements have been initialized
-        unsafe { scc.set_len(csr.num_nodes()) };
-        partition.push(0);
+        #[must_use]
+        pub const fn len(&self) -> usize {
+            self.partition.len() - 1
+        }
 
-        Self { scc, partition }
+        #[must_use]
+        pub fn topological_iter(&self) -> impl DoubleEndedIterator<Item = &[usize]> {
+            self.partition
+                .windows(2)
+                .rev()
+                .map(|w| &self.scc[w[1]..w[0]])
+        }
+    }
+}
+
+pub mod search {
+
+    use super::*;
+    struct BitSet(Vec<usize>);
+
+    impl BitSet {
+        const B: usize = usize::BITS as usize;
+
+        fn new(n: usize) -> Self {
+            Self(vec![0; n.div_ceil(usize::BITS as usize)])
+        }
+
+        fn set(&mut self, i: usize) {
+            let (b, i) = (i / Self::B, i % Self::B);
+            self.0[b] |= (1 as usize) << i;
+        }
+
+        fn get(&self, i: usize) -> bool {
+            let (b, i) = (i / Self::B, i % Self::B);
+
+            (self.0[b] >> i) & 1 > 0
+        }
     }
 
-    #[must_use]
-    pub const fn len(&self) -> usize {
-        self.partition.len() - 1
+    #[derive(Debug, Clone)]
+    pub enum Traverse<W> {
+        Visit(Edge<W>),
+        Leave(Edge<W>),
+        Revisit(Edge<W>),
     }
 
-    #[must_use]
-    pub fn topological_iter(&self) -> impl DoubleEndedIterator<Item = &[usize]> {
-        self.partition
-            .windows(2)
-            .rev()
-            .map(|w| &self.scc[w[1]..w[0]])
+    pub struct DFS<'a, G>
+    where
+        G: Graph,
+    {
+        graph: &'a G,
+
+        stack: Vec<usize>,
+        visited: BitSet,
+    }
+
+    impl<G> DFS<'_, G>
+    where
+        G: Graph,
+    {
+        pub fn new(graph: &G) -> DFS<'_, G> {
+            let stack = Vec::with_capacity(graph.num_nodes() * 2);
+            let visited = BitSet::new(graph.num_nodes());
+
+            DFS {
+                graph,
+                stack,
+                visited,
+            }
+        }
+
+        pub fn set_source(&mut self, source: usize) {
+            self.stack.clear();
+            self.stack.extend([source, 0]);
+
+            self.visited.set(source);
+        }
+
+        pub fn is_visited(&self, i: usize) -> bool {
+            self.visited.get(i)
+        }
+
+        pub fn next(&mut self) -> Option<Traverse<&G::Weight>> {
+            let Self {
+                graph,
+                stack,
+                visited,
+            } = self;
+
+            let [source, edge_idx] = stack.last_chunk_mut::<2>()?;
+            if let Some((target, weight)) = graph.edges(*source).get(*edge_idx) {
+                *edge_idx += 1;
+
+                let e = Edge {
+                    source: *source,
+                    target: *target,
+                    weight,
+                };
+
+                let t = if visited.get(*target) {
+                    Traverse::Revisit(e)
+                } else {
+                    visited.set(*source);
+                    stack.extend([*target, 0]);
+                    Traverse::Visit(e)
+                };
+                return Some(t);
+            }
+
+            stack.pop();
+            stack.pop();
+
+            let &[parent, edge_idx] = stack.last_chunk::<2>()?;
+            let e = Edge {
+                source: parent,
+                target: graph.edges(parent)[edge_idx - 1].0,
+                weight: &graph.edges(parent)[edge_idx - 1].1,
+            };
+            Some(Traverse::Leave(e))
+        }
     }
 }
