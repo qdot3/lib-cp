@@ -18,7 +18,6 @@ members = [
     "geo/point",
     "graph/bipartite",
     "graph/csr",
-    "graph/csr2",
     "graph/lca",
     "graph/scc",
     "graph/tree_dp",
@@ -45,6 +44,9 @@ members = [
     "algo/hilbert_sort",
     "io/reader",
     "algo/ska_sort",
+    "graph2/csr2",
+    "graph2/scc2",
+    "graph2/search", "graph2/lca2",
 ]
 
 [workspace.package]
@@ -91,10 +93,13 @@ point = { path = "./geo/point" }
 
 bipartite = { path = "./graph/bipartite" }
 csr = { path = "./graph/csr" }
-# csr2 = { path = "./graph/csr2" } UC
 lca = { path = "./graph/lca" }
 scc = { path = "./graph/scc" }
 tree_dp = { path = "./graph/tree_dp" }
+
+csr2 = { path = "./graph2/csr2" }
+scc2 = { path = "./graph2/scc2" }
+search = { path = "./graph2/search" }
 
 factorial = { path = "./math/factorial" }
 floor_sum = { path = "./math/floor_sum" }

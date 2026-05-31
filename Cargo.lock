@@ -164,6 +164,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "lca2"
+version = "0.1.0"
+dependencies = [
+ "csr2",
+ "rmq",
+ "search",
+]
+
+[[package]]
 name = "lcp"
 version = "0.1.0"
 dependencies = [
@@ -496,6 +505,20 @@ name = "scc"
 version = "0.1.0"
 dependencies = [
  "csr",
+]
+
+[[package]]
+name = "scc2"
+version = "0.1.0"
+dependencies = [
+ "csr2",
+]
+
+[[package]]
+name = "search"
+version = "0.1.0"
+dependencies = [
+ "csr2",
 ]
 
 [[package]]

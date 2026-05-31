@@ -1,8 +1,9 @@
 [package]
-name = "csr2"
+name = "scc2"
 version = "0.1.0"
 edition.workspace = true
-
+rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
+csr2.workspace = true
