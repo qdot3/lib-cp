@@ -57,3 +57,13 @@ impl<T, const D: usize> IndexMut<[usize; D]> for NDArray<T, D> {
         &mut self.data[i]
     }
 }
+
+impl<T, const D: usize> IntoIterator for NDArray<T, D> {
+    type Item = T;
+    type IntoIter = <Box<[T]> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let Self { data, .. } = self;
+        <Box<[T]> as IntoIterator>::into_iter(data)
+    }
+}
