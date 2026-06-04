@@ -58,10 +58,9 @@ tree_dp = { workspace = true }
 
 # disjoint_sparse_table = { workspace = true }
 # sparse_table = { workspace = true }
-rmq = { workspace = true }
-
-fenwick = { workspace = true }
-simd_bit = { workspace = true }
+# rmq = { workspace = true }
+# fenwick = { workspace = true }
+# simd_bit = { workspace = true }
 # lazy_segtree = { workspace = true }
 # segtree = { workspace = true }
 union_find = { workspace = true }
