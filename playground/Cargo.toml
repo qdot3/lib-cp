@@ -24,6 +24,7 @@ thiserror = "2.0.16"
 
 # my crates
 lib-modulo = "0.8.1"
+fixedmod = "1.0.0"
 
 # crates from <https://github.com/qdot3/segtree>
 segtree = { git = "https://github.com/qdot3/segtree", version = "0.2.1" }
