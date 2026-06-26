@@ -41,7 +41,7 @@ impl IntBuffer {
     }
 }
 
-/// format 4 digits at once. 40 MB.
+/// format 4 digits at once. 40 KB.
 static LUT4: [[u8; 4]; 10000] = const {
     let mut lut = [[0; 4]; 10000];
 

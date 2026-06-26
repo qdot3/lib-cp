@@ -85,9 +85,9 @@ checksum = "1d674e81391d1e1ab681a28d99df07927c6d4aa5b027d7da16ba32d1d21ecd99"
 
 [[package]]
 name = "fixedmod"
-version = "1.0.0"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27d5dd113c8ba5ee2cc1b1cfd419ee7fb441ec9ac4376143b3a53a203ae56bbd"
+checksum = "f65e53df9d15f59758f00ff0de68345eecc327ee9cfa384e8831479dff291e99"
 
 [[package]]
 name = "floor_sum"
