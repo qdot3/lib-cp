@@ -43,7 +43,8 @@ op_max = { git = "https://github.com/qdot3/segtree", version = "0.2.0" }
 op_affine = { git = "https://github.com/qdot3/segtree", version = "0.2.0" }
 op_bitand = { git = "https://github.com/qdot3/segtree", version = "0.1.0" }
 op_bitxor = { git = "https://github.com/qdot3/segtree", version = "0.1.0" }
-op_bitor = { git = "https://github.com/qdot3/segtree", version = "0.1.0" }# END
+op_bitor = { git = "https://github.com/qdot3/segtree", version = "0.1.0" }
+# END
 
 # workspace members
 hilbert_sort = { workspace = true }

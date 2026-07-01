@@ -34,7 +34,11 @@ where
         );
     }
 
-    while let Some((ref level, ref dir, i)) = stack.last_mut() {
+    while let Some((level, dir, i)) = stack.last_mut() {
+        // FIXME: use `ref` keyword
+        let level = &*level;
+        let dir = &*dir;
+
         let start = {
             let start = bucket[*level as usize][i.wrapping_sub(1) as usize];
             if *i == 0 {

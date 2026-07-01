@@ -46,7 +46,7 @@ members = [
     "algo/ska_sort",
     "graph2/csr2",
     "graph2/scc2",
-    "graph2/search", "graph2/lca2",
+    "graph2/search", "graph2/lca2", "algo/fibonacci_search",
 ]
 
 [workspace.package]
