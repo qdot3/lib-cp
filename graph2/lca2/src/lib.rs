@@ -5,14 +5,14 @@ pub struct LCA {
 }
 
 impl LCA {
-    pub fn new<W, G>(graph: CSR<W, G>, root: usize) -> (Self, CSR<W, G>) {
+    pub fn new<W, G>(graph: &CSR<W, G>, root: usize) -> (Self, CSR<W, G>) {
         todo!()
+
     }
 
     pub fn lcs_pair(&self, x: usize, y: usize) -> usize {
         let mut l = self.in_out[x * 2];
         let mut r = self.in_out[y * 2];
-
         if l > r {
             std::mem::swap(&mut l, &mut r);
         }

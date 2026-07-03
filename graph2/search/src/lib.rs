@@ -38,7 +38,7 @@ impl<W> DFS<W, Directed> {
         self.visited.get(i)
     }
 
-    pub fn next(&mut self) -> Option<Traverse<&mut W>> {
+    pub fn next_mut(&mut self) -> Option<Traverse<&mut W>> {
         let Self {
             graph,
             stack,
