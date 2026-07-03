@@ -49,7 +49,6 @@ impl<W> CSRBuilder<W, Directed> {
     /// # Panics
     ///
     /// Node index must be compact.
-    #[inline(always)]
     pub fn push_edge(&mut self, edge: Edge<W>) {
         assert!(
             edge.source.max(edge.target) < self.num_node,
@@ -72,7 +71,6 @@ impl<W> CSRBuilder<W, Undirected> {
     /// Appends an undirected edge.
     ///
     /// Node index must be compact.
-    #[inline(always)]
     pub fn push_edge(&mut self, edge: Edge<W>)
     where
         W: Clone,

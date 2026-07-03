@@ -39,6 +39,7 @@ impl ConvexHull {
         }) {
             while upper.len() >= 2 && {
                 let n = upper.len();
+                // CHT
                 Point2D::direction(&upper[n - 2], &upper[n - 1], &u).is_ge()
             } {
                 upper.pop();
