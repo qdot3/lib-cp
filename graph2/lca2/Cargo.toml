@@ -9,3 +9,7 @@ authors.workspace = true
 csr2.workspace = true
 search.workspace = true
 rmq.workspace = true
+
+sparse_table = { git = "https://github.com/qdot3/segtree", version = "0.2.0" }
+op_min = { git = "https://github.com/qdot3/segtree", version = "0.3.0" }
+segtree_traits = { git = "https://github.com/qdot3/segtree", package = "traits", version = "0.3.0" }

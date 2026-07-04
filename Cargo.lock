@@ -9,6 +9,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
+name = "b2i"
+version = "0.1.0"
+
+[[package]]
 name = "bipartite"
 version = "0.1.0"
 dependencies = [
@@ -18,8 +22,8 @@ dependencies = [
 
 [[package]]
 name = "bit"
-version = "0.2.0"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.3.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 dependencies = [
  "traits",
 ]
@@ -99,16 +103,16 @@ version = "0.1.0"
 
 [[package]]
 name = "foldable_deque"
-version = "0.3.0"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.4.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 dependencies = [
  "traits",
 ]
 
 [[package]]
 name = "foldable_queue"
-version = "0.3.0"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.4.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 dependencies = [
  "traits",
 ]
@@ -186,8 +190,11 @@ name = "lca2"
 version = "0.1.0"
 dependencies = [
  "csr2",
+ "op_min",
  "rmq",
  "search",
+ "sparse_table 0.2.0",
+ "traits",
 ]
 
 [[package]]
@@ -287,56 +294,56 @@ dependencies = [
 
 [[package]]
 name = "op_add"
-version = "0.2.0"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.3.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 dependencies = [
  "traits",
 ]
 
 [[package]]
 name = "op_affine"
-version = "0.2.0"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.3.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 dependencies = [
  "traits",
 ]
 
 [[package]]
 name = "op_bitand"
-version = "0.1.0"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.2.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 dependencies = [
  "traits",
 ]
 
 [[package]]
 name = "op_bitor"
-version = "0.1.0"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.2.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 dependencies = [
  "traits",
 ]
 
 [[package]]
 name = "op_bitxor"
-version = "0.1.0"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.2.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 dependencies = [
  "traits",
 ]
 
 [[package]]
 name = "op_max"
-version = "0.2.0"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.3.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 dependencies = [
  "traits",
 ]
 
 [[package]]
 name = "op_min"
-version = "0.2.0"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.3.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 dependencies = [
  "traits",
 ]
@@ -374,7 +381,6 @@ dependencies = [
  "itertools",
  "kmp",
  "lca",
- "lib-modulo",
  "manacher",
  "min_prime_factor",
  "mint",
@@ -401,11 +407,11 @@ dependencies = [
  "rolling_hash",
  "rustc-hash",
  "scc",
- "segtree 0.3.0",
+ "segtree 0.4.0",
  "segtree_dual",
  "segtree_lazy",
  "ska_sort",
- "sparse_table 0.1.2",
+ "sparse_table 0.2.0",
  "suffix_array",
  "thiserror",
  "traits",
@@ -573,24 +579,24 @@ dependencies = [
 
 [[package]]
 name = "segtree"
-version = "0.3.0"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.4.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 dependencies = [
  "traits",
 ]
 
 [[package]]
 name = "segtree_dual"
-version = "0.3.0"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.4.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 dependencies = [
  "traits",
 ]
 
 [[package]]
 name = "segtree_lazy"
-version = "0.2.0"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.3.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 dependencies = [
  "traits",
 ]
@@ -612,8 +618,8 @@ dependencies = [
 
 [[package]]
 name = "sparse_table"
-version = "0.1.2"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.2.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 dependencies = [
  "traits",
 ]
@@ -673,8 +679,8 @@ dependencies = [
 
 [[package]]
 name = "traits"
-version = "0.2.0"
-source = "git+https://github.com/qdot3/segtree#efabc184c0c515c8dfebdf2743a80112cf815fce"
+version = "0.3.0"
+source = "git+https://github.com/qdot3/segtree#73e84d68a096ca25ba94d7d01010e100547fa935"
 
 [[package]]
 name = "tree_dp"

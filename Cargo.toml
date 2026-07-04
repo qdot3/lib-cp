@@ -44,9 +44,11 @@ members = [
     "algo/hilbert_sort",
     "io/reader",
     "algo/ska_sort",
+    "algo/fibonacci_search",
     "graph2/csr2",
     "graph2/scc2",
-    "graph2/search", "graph2/lca2", "algo/fibonacci_search",
+    "graph2/search",
+    "graph2/lca2", "b2i",
 ]
 
 [workspace.package]

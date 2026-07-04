@@ -1,5 +1,5 @@
-//! 参考サイト
-//! - <https://zenn.dev/mizar/articles/fc87d667153080>
+// 参考サイト
+// - <https://zenn.dev/mizar/articles/fc87d667153080>
 
 /// FIXME: use std::hint::cold_path();
 #[cold]

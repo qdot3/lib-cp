@@ -1,4 +1,4 @@
-use csr2::{Directed, Edge, OutEdge, CSR};
+use csr2::{Edge, OutEdge, CSR};
 
 #[derive(Debug, Clone)]
 pub enum Traverse<W> {
@@ -8,19 +8,19 @@ pub enum Traverse<W> {
 }
 
 #[derive(Debug, Clone)]
-pub struct DFS<W, G> {
-    pub graph: CSR<W, G>,
+pub struct DFS<'a, W, G> {
+    graph: &'a CSR<W, G>,
 
     stack: Vec<usize>,
     visited: BitSet,
 }
 
-impl<W> DFS<W, Directed> {
-    pub fn new(graph: CSR<W, Directed>) -> Self {
+impl<'a, W, G> DFS<'a, W, G> {
+    pub fn new(graph: &'a CSR<W, G>) -> Self {
         let stack = Vec::with_capacity(graph.num_nodes() * 2);
         let visited = BitSet::new(graph.num_nodes());
 
-        DFS {
+        Self {
             graph,
             stack,
             visited,
@@ -38,7 +38,7 @@ impl<W> DFS<W, Directed> {
         self.visited.get(i)
     }
 
-    pub fn next_mut(&mut self) -> Option<Traverse<&mut W>> {
+    pub fn next(&mut self) -> Option<Traverse<&W>> {
         let Self {
             graph,
             stack,
@@ -47,9 +47,9 @@ impl<W> DFS<W, Directed> {
 
         let [source, nth] = stack.last_chunk_mut::<2>()?;
 
-        // hack the borrow checker. see <https://docs.rs/polonius-the-crab/latest/polonius_the_crab/index.html>
-        if graph.nth_edge_mut(*source, *nth).is_some() {
-            let OutEdge { target, weight } = graph.nth_edge_mut(*source, *nth).unwrap();
+        // HACK: borrow checker. see <https://docs.rs/polonius-the-crab/latest/polonius_the_crab/index.html>
+        if graph.nth_edge(*source, *nth).is_some() {
+            let OutEdge { target, weight } = graph.nth_edge(*source, *nth).unwrap();
             *nth += 1;
 
             let e = Edge {
@@ -71,7 +71,7 @@ impl<W> DFS<W, Directed> {
 
             let &[parent, nth] = stack.last_chunk::<2>()?;
             let OutEdge { target, weight } = graph
-                .nth_edge_mut(parent, nth - 1)
+                .nth_edge(parent, nth - 1)
                 .expect("this edge has already been passed.");
 
             let e = Edge {
