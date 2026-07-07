@@ -48,7 +48,7 @@ members = [
     "graph2/csr2",
     "graph2/scc2",
     "graph2/search",
-    "graph2/lca2", "b2i",
+    "graph2/lca2",
 ]
 
 [workspace.package]

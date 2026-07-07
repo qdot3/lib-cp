@@ -202,146 +202,6 @@ impl FromBytes for u128 {
     }
 }
 
-impl FromBytes for i64 {
-    type Err = ();
-
-    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
-        let (is_positive, digits) = match bytes {
-            [b'-', rest @ ..] => (false, rest),
-            [b'+', rest @ ..] | rest => (true, rest),
-        };
-
-        if digits.is_empty() {
-            cold_path();
-            return Err(());
-        }
-
-        let (pre, suf) = digits.as_rchunks::<8>();
-        let mut n = {
-            let mut bytes = [b'0'; 8];
-            // memcpy回避
-            match pre.len() {
-                1 => bytes[7..].copy_from_slice(&pre),
-                2 => bytes[6..].copy_from_slice(&pre),
-                3 => bytes[5..].copy_from_slice(&pre),
-                4 => bytes[4..].copy_from_slice(&pre),
-                5 => bytes[3..].copy_from_slice(&pre),
-                6 => bytes[2..].copy_from_slice(&pre),
-                7 => bytes[1..].copy_from_slice(&pre),
-                _ => {}
-            };
-            parse_8_digits(bytes).ok_or(())? as i64
-        };
-
-        let mut of = false;
-        if is_positive {
-            for chunk in suf {
-                let x = n.overflowing_mul(1_0000_0000);
-                n = x.0;
-                of |= x.1;
-
-                let x = n.overflowing_add(parse_8_digits(*chunk).ok_or(())? as i64);
-                n = x.0;
-                of |= x.1;
-            }
-        } else {
-            n = -n;
-            for chunk in suf {
-                let x = n.overflowing_mul(1_0000_0000);
-                n = x.0;
-                of |= x.1;
-
-                let x = n.overflowing_sub(parse_8_digits(*chunk).ok_or(())? as i64);
-                n = x.0;
-                of |= x.1;
-            }
-        }
-
-        if of {
-            cold_path();
-            Err(())
-        } else {
-            Ok(n)
-        }
-    }
-}
-
-impl FromBytes for i128 {
-    type Err = ();
-
-    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
-        let (is_positive, digits) = match bytes {
-            [b'-', rest @ ..] => (false, rest),
-            [b'+', rest @ ..] | rest => (true, rest),
-        };
-
-        if digits.is_empty() {
-            cold_path();
-            return Err(());
-        }
-
-        let (pre, suf) = digits.as_rchunks::<16>();
-        let mut n = {
-            let mut bytes = [b'0'; 16];
-            // memcpy回避
-            match pre.len() {
-                1 => bytes[15..].copy_from_slice(&pre),
-                2 => bytes[14..].copy_from_slice(&pre),
-                3 => bytes[13..].copy_from_slice(&pre),
-                4 => bytes[12..].copy_from_slice(&pre),
-                5 => bytes[11..].copy_from_slice(&pre),
-                6 => bytes[10..].copy_from_slice(&pre),
-                7 => bytes[9..].copy_from_slice(&pre),
-                8 => bytes[8..].copy_from_slice(&pre),
-                9 => bytes[7..].copy_from_slice(&pre),
-                10 => bytes[6..].copy_from_slice(&pre),
-                11 => bytes[5..].copy_from_slice(&pre),
-                12 => bytes[4..].copy_from_slice(&pre),
-                13 => bytes[3..].copy_from_slice(&pre),
-                14 => bytes[2..].copy_from_slice(&pre),
-                15 => bytes[1..].copy_from_slice(&pre),
-                _ => {}
-            };
-            match pre.len() {
-                1 | 2 | 3 | 4 => parse_4_digits(bytes.as_chunks::<4>().0[3]).ok_or(())? as i128,
-                5 | 6 | 7 | 8 => parse_8_digits(bytes.as_chunks::<8>().0[1]).ok_or(())? as i128,
-                9 | 10 | 11 | 12 | 13 | 14 | 15 => parse_16_digits(bytes).ok_or(())? as i128,
-                _ => 0,
-            }
-        };
-        let mut of = false;
-        if is_positive {
-            for chunk in suf {
-                let x = n.overflowing_mul(1_0000_0000_0000_0000);
-                n = x.0;
-                of |= x.1;
-
-                let x = n.overflowing_add(parse_16_digits(*chunk).ok_or(())? as i128);
-                n = x.0;
-                of |= x.1;
-            }
-        } else {
-            n = -n;
-            for chunk in suf {
-                let x = n.overflowing_mul(1_0000_0000_0000_0000);
-                n = x.0;
-                of |= x.1;
-
-                let x = n.overflowing_sub(parse_16_digits(*chunk).ok_or(())? as i128);
-                n = x.0;
-                of |= x.1;
-            }
-        }
-
-        if of {
-            cold_path();
-            Err(())
-        } else {
-            Ok(n)
-        }
-    }
-}
-
 macro_rules! from_bytes_derive {
     ( $tar:ty as $src:ty) => {
         impl FromBytes for $tar {
@@ -360,10 +220,33 @@ from_bytes_derive!(u16 as u64);
 from_bytes_derive!(u32 as u64);
 from_bytes_derive!(usize as u64);
 
-from_bytes_derive!(i8 as i64);
-from_bytes_derive!(i16 as i64);
-from_bytes_derive!(i32 as i64);
-from_bytes_derive!(isize as i64);
+macro_rules! from_bytes_signed {
+    ( $i:ty, $u:ty ) => {
+        impl FromBytes for $i {
+            type Err = ();
+
+            fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
+                let (is_positive, digits) = match bytes {
+                    [b'-', rest @ ..] => (false, rest),
+                    [b'+', rest @ ..] | rest => (true, rest),
+                };
+
+                let u = <$u>::from_bytes(digits)?;
+                if is_positive {
+                    (0 as $i).checked_add_unsigned(u).ok_or(())
+                } else {
+                    (0 as $i).checked_sub_unsigned(u).ok_or(())
+                }
+            }
+        }
+    };
+}
+from_bytes_signed!(i8, u8);
+from_bytes_signed!(i16, u16);
+from_bytes_signed!(i32, u32);
+from_bytes_signed!(i64, u64);
+from_bytes_signed!(i128, u128);
+from_bytes_signed!(isize, usize);
 
 #[cfg(test)]
 mod tests {

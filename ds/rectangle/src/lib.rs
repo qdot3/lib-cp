@@ -28,6 +28,13 @@ impl<T, const D: usize> NDArray<T, D> {
     {
         self.data.fill(value);
     }
+
+    pub fn accumulate_by<F>(&mut self, f: F)
+    where
+        F: FnMut(&T, &T) -> T,
+    {
+        
+    }
 }
 
 impl<T, const D: usize> Index<[usize; D]> for NDArray<T, D> {
