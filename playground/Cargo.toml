@@ -85,6 +85,7 @@ z_algorithm = { workspace = true }
 kmp = { workspace = true }
 manacher = { workspace = true }
 suffix_array = { workspace = true }
+lcp = { workspace = true }
 
 from_bytes = { workspace = true }
 input = { workspace = true }

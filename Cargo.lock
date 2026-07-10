@@ -377,6 +377,7 @@ dependencies = [
  "itertools",
  "kmp",
  "lca",
+ "lcp",
  "manacher",
  "min_prime_factor",
  "mint",

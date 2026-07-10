@@ -84,6 +84,9 @@ const fn parse_4_digits(bytes: [u8; 4]) -> Option<u32> {
 pub trait FromBytes: Sized {
     type Err;
 
+    /// Parses an integer from byte sequence.
+    ///
+    /// Format: `[+-]?[0-9]+`
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err>;
 }
 

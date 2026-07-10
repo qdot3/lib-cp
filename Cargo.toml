@@ -115,6 +115,7 @@ z_algorithm = { path = "./string/z_algorithm" }
 kmp = { path = "./string/kmp" }
 manacher = { path = "./string/manacher" }
 suffix_array = { path = "./string/suffix_array" }
+lcp = { path = "./string/lcp" }
 
 input = { path = "./io/input" }
 output = { path = "./io/output" }
