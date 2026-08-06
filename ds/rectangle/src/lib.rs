@@ -33,7 +33,6 @@ impl<T, const D: usize> NDArray<T, D> {
     where
         F: FnMut(&T, &T) -> T,
     {
-        
     }
 }
 

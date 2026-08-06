@@ -417,4 +417,3 @@ mod compact {
         }
     }
 }
-
