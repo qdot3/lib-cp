@@ -3,7 +3,6 @@ use std::io::stdin;
 use output::IntBuffer;
 use proconio::fastout;
 use reader::FastBufReader;
-use rustc_hash::FxHashSet;
 
 #[fastout]
 fn main() {
