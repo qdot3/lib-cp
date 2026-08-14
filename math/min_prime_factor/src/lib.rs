@@ -212,6 +212,20 @@ impl MinPrimeFactor {
 
         Factorize::new(iter)
     }
+
+    pub fn append_divisors(&self, n: NonZero<u32>, buf: &mut Vec<u32>) {
+        buf.reserve(n.get().isqrt() as usize * 2);
+
+        let s = buf.len();
+        buf.push(1);
+        for (d, n) in self.factorize(n) {
+            let t = buf.len();
+            for d in std::iter::successors(Some(d), |prod| Some(prod * d)).take(n as usize) {
+                buf.extend_from_within(s..t);
+                buf.iter_mut().rev().take(t - s).for_each(|v| *v *= d);
+            }
+        }
+    }
 }
 
 pub struct Factorize<I>
