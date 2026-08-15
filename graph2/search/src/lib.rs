@@ -2,9 +2,9 @@ use csr2::{Edge, OutEdge, CSR};
 
 #[derive(Debug, Clone)]
 pub enum Traverse<W> {
-    /// 未使用の辺で未訪問の頂点に進む。
+    /// 未訪問の頂点に進む未使用の辺。頂点を移動する。
     Visit(Edge<W>),
-    /// 使用済みの辺を逆進する。
+    /// 逆進する使用済みの辺。頂点を移動する。
     Leave(Edge<W>),
     /// 訪問済み頂点に至る未使用の辺。頂点を移動しない。
     Visited(Edge<W>),
@@ -30,17 +30,18 @@ impl<'a, W, G> Visitor<'a, W, G> {
         }
     }
 
-    /// 訪問履歴を削除する
+    /// 訪問履歴を削除する。
     pub fn reset(&mut self) {
         // FIXME: ビットセットはライブラリ化する
         self.visited.0.fill(0);
     }
 
+    /// 訪問済みなら`true`を返す。
     pub fn is_visited(&self, i: usize) -> bool {
         self.visited.get(i)
     }
 
-    /// `source`からDFSする。`source`が訪問済みの場合は何もしない
+    /// `source`から未訪問の頂点をDFSする。
     pub fn dfs(&'a mut self, source: usize) -> DFS<'a, W, G> {
         self.stack.clear();
         if !self.visited.get(source) {
@@ -99,6 +100,51 @@ impl<'a, W, G> DFS<'a, W, G> {
 
             return Some(Traverse::Leave(e));
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct BFS<'a, W, G> {
+    visitor: &'a mut Visitor<'a, W, G>,
+    n: usize,
+}
+
+impl<'a, W, G> BFS<'a, W, G> {
+    fn next(&mut self) -> Option<Traverse<&W>> {
+        let Visitor {
+            graph,
+            stack,
+            visited,
+        } = self.visitor;
+
+        let &[source, nth, parent] = stack.as_chunks::<3>().0.get(self.n)?;
+        let OutEdge { target, weight } = graph.nth_edge(source, nth).unwrap();
+
+        self.n += 1;
+
+        // 初回訪問時のみ辺を追加する
+        if visited.get(source) {
+            stack.extend(
+                graph
+                    .out_edges(source)
+                    .iter()
+                    .enumerate()
+                    .flat_map(|(i, e)| [e.target, i, source]),
+            );
+        }
+
+        let e = Edge {
+            source,
+            target,
+            weight,
+        };
+        Some(if !visited.get(target) {
+            Traverse::Visit(e)
+        } else if target == parent {
+            todo!()
+        } else {
+            Traverse::Visited(e)
+        })
     }
 }
 
