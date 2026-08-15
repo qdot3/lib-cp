@@ -1,5 +1,5 @@
 use csr2::CSR;
-use search::DFS;
+use search::Visitor;
 
 pub struct LCA {
     in_out: Vec<usize>,
@@ -11,14 +11,14 @@ impl LCA {
     /// - `graph` must be a tree
     /// - If `graph` is directed, `root` must be a root of the `graph`
     pub fn new<W, G>(graph: &CSR<W, G>, root: usize) -> Self {
-        let mut dfs = DFS::new(graph);
-        dfs.set_source(root);
+        let mut visitor = Visitor::new(graph);
 
+        let mut dfs = visitor.dfs(root);
         while let Some(t) = dfs.next() {
             match t {
-                search::Traverse::Visit(edge) => todo!(),
-                search::Traverse::Leave(edge) => todo!(),
-                search::Traverse::Revisit(_) => (),
+                search::Traverse::Visit(_) => todo!(),
+                search::Traverse::Leave(_) => todo!(),
+                search::Traverse::Visited(_) => (),
             }
         }
         todo!()

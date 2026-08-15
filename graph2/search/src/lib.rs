@@ -2,20 +2,23 @@ use csr2::{Edge, OutEdge, CSR};
 
 #[derive(Debug, Clone)]
 pub enum Traverse<W> {
+    /// 未使用の辺で未訪問の頂点に進む。
     Visit(Edge<W>),
+    /// 使用済みの辺を逆進する。
     Leave(Edge<W>),
-    Revisit(Edge<W>),
+    /// 訪問済み頂点に至る未使用の辺。頂点を移動しない。
+    Visited(Edge<W>),
 }
 
-#[derive(Debug, Clone)]
-pub struct DFS<'a, W, G> {
+#[derive(Debug)]
+pub struct Visitor<'a, W, G> {
     graph: &'a CSR<W, G>,
 
     stack: Vec<usize>,
     visited: BitSet,
 }
 
-impl<'a, W, G> DFS<'a, W, G> {
+impl<'a, W, G> Visitor<'a, W, G> {
     pub fn new(graph: &'a CSR<W, G>) -> Self {
         let stack = Vec::with_capacity(graph.num_nodes() * 2);
         let visited = BitSet::new(graph.num_nodes());
@@ -27,27 +30,41 @@ impl<'a, W, G> DFS<'a, W, G> {
         }
     }
 
-    pub fn set_source(&mut self, source: usize) {
-        self.stack.clear();
-        self.stack.extend([source, 0]);
-
-        self.visited.set(source);
+    /// 訪問履歴を削除する
+    pub fn reset(&mut self) {
+        // FIXME: ビットセットはライブラリ化する
+        self.visited.0.fill(0);
     }
 
     pub fn is_visited(&self, i: usize) -> bool {
         self.visited.get(i)
     }
 
+    /// `source`からDFSする。`source`が訪問済みの場合は何もしない
+    pub fn dfs(&'a mut self, source: usize) -> DFS<'a, W, G> {
+        self.stack.clear();
+        if !self.visited.get(source) {
+            self.visited.set(source);
+            self.stack.extend([source, 0]);
+        }
+        DFS(self)
+    }
+}
+
+#[derive(Debug)]
+pub struct DFS<'a, W, G>(&'a mut Visitor<'a, W, G>);
+
+impl<'a, W, G> DFS<'a, W, G> {
     pub fn next(&mut self) -> Option<Traverse<&W>> {
-        let Self {
+        let Visitor {
             graph,
             stack,
             visited,
-        } = self;
+        } = self.0;
 
         let [source, nth] = stack.last_chunk_mut::<2>()?;
 
-        // HACK: borrow checker. see <https://docs.rs/polonius-the-crab/latest/polonius_the_crab/index.html>
+        // HACK: see <https://docs.rs/polonius-the-crab/latest/polonius_the_crab/index.html>
         if graph.nth_edge(*source, *nth).is_some() {
             let OutEdge { target, weight } = graph.nth_edge(*source, *nth).unwrap();
             *nth += 1;
@@ -59,7 +76,7 @@ impl<'a, W, G> DFS<'a, W, G> {
             };
 
             if visited.get(target) {
-                return Some(Traverse::Revisit(e));
+                return Some(Traverse::Visited(e));
             } else {
                 visited.set(*source);
                 stack.extend([target, 0]);
