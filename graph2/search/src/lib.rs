@@ -1,15 +1,5 @@
 use csr2::{Edge, OutEdge, CSR};
 
-#[derive(Debug, Clone)]
-pub enum Traverse<W> {
-    /// 未訪問の頂点に進む未使用の辺。頂点を移動する。
-    Visit(Edge<W>),
-    /// 逆進する使用済みの辺。頂点を移動する。
-    Leave(Edge<W>),
-    /// 訪問済み頂点に至る未使用の辺。頂点を移動しない。
-    Visited(Edge<W>),
-}
-
 #[derive(Debug)]
 pub struct Visitor<'a, W, G> {
     graph: &'a CSR<W, G>,
@@ -50,6 +40,27 @@ impl<'a, W, G> Visitor<'a, W, G> {
         }
         DFS(self)
     }
+}
+
+#[derive(Debug, Clone)]
+pub enum DFSTraversal<W> {
+    /// Descend into an unvisited node through an unused edge.
+    Descend(Edge<W>),
+    /// Ascend to the parent through the edge used to arrive here.
+    Ascend(Edge<W>),
+    /// Glance an visited node through an unused edge.
+    /// Stay in the current node.
+    Glance(Edge<W>),
+}
+
+#[derive(Debug, Clone)]
+pub enum Traverse<W> {
+    /// 未訪問の頂点に進む未使用の辺。頂点を移動する。
+    Visit(Edge<W>),
+    /// 逆進する使用済みの辺。頂点を移動する。
+    Leave(Edge<W>),
+    /// 訪問済み頂点に至る未使用の辺。頂点を移動しない。
+    Visited(Edge<W>),
 }
 
 #[derive(Debug)]
@@ -101,6 +112,13 @@ impl<'a, W, G> DFS<'a, W, G> {
             return Some(Traverse::Leave(e));
         }
     }
+}
+
+pub enum BFSTraversal<W> {
+    /// Discover a new vertex through an unused edge.
+    Discover(Edge<W>),
+    /// Glance an visited node through an unused edge.
+    Glance(Edge<W>),
 }
 
 #[derive(Debug)]

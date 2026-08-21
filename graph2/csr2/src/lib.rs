@@ -141,10 +141,16 @@ pub struct CSR<W, G> {
 }
 
 impl<W, G> CSR<W, G> {
+    /// # Panics
+    ///
+    /// Panics if `source` node does not exist.
     pub fn out_edges(&self, source: usize) -> &[OutEdge<W>] {
         &self.target[self.partition[source]..self.partition[source + 1]]
     }
 
+    /// # Panics
+    ///
+    /// Panics if `source` node does not exist.
     pub fn nth_edge(&self, source: usize, nth: usize) -> Option<OutEdge<&W>> {
         if let Some(e) = self.out_edges(source).get(nth) {
             Some(OutEdge {
