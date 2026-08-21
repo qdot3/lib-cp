@@ -42,6 +42,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "crt"
+version = "0.1.0"
+dependencies = [
+ "num-integer",
+]
+
+[[package]]
 name = "csr"
 version = "0.1.0"
 
@@ -363,6 +370,7 @@ dependencies = [
  "bit",
  "compress",
  "convex_hull",
+ "crt",
  "csr",
  "factorial",
  "fixedbitset",

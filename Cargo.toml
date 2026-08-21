@@ -49,6 +49,7 @@ members = [
     "graph2/scc2",
     "graph2/search",
     "graph2/lca2",
+    "math/crt",
 ]
 
 [workspace.package]
@@ -109,6 +110,7 @@ fps = { path = "./math/fps" }
 mint = { path = "./math/mint" }
 min_prime_factor = { path = "./math/min_prime_factor" }
 ops = { path = "./math/ops" }
+crt = { path = "./math/crt" }
 
 rolling_hash = { path = "./string/rolling_hash" }
 z_algorithm = { path = "./string/z_algorithm" }
