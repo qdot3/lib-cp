@@ -77,7 +77,7 @@ where
 }
 
 /// One step result produced while doing a DFS.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum DFSTraversal<W> {
     /// Went deeper: moved into a not-yet-visited node through an unused edge.
     Descend(Edge<W>),
@@ -89,6 +89,7 @@ pub enum DFSTraversal<W> {
     Glance(Edge<W>),
 }
 
+/// Lending iterator performing DFS.
 #[derive(Debug)]
 pub struct DFS<'a, W, E>
 where
@@ -109,12 +110,9 @@ where
             used_edge,
         } = self.visitor;
 
-        // In an undirected graph, edge (u -> v) and its mirror (v -> u) represent the same physical edge.
-        // If the mirror edge was already consumed from the other side, we must skip it here too,
-        // otherwise we would traverse the same edge twice.
+        // Skip used edges
         if !E::DIRECTED {
             let [source, mut nth] = buf.pop()?;
-            // Skip used edges
             while csr
                 .nth_edge(source, nth)
                 .is_some_and(|e| !used_edge.insert(e.index))
@@ -165,6 +163,7 @@ where
 }
 
 /// One step result produced while doing a BFS.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BFSTraversal<W> {
     /// Found a brand-new node through an unused edge.
     Discover(Edge<W>),
@@ -172,14 +171,13 @@ pub enum BFSTraversal<W> {
     Glance(Edge<W>),
 }
 
+/// Lending iterator performing BFS.
 #[derive(Debug)]
 pub struct BFS<'a, W, E>
 where
     E: EdgeType,
 {
     visitor: &'a mut Visitor<W, E>,
-    // Index of the frame in `buf` currently being expanded.
-    // Frames before `cursor` are already fully processed.
     cursor: usize,
 }
 
@@ -195,7 +193,6 @@ where
             used_edge,
         } = self.visitor;
 
-        // Skip used edges
         let e = loop {
             let [source, nth] = buf.get_mut(self.cursor)?;
             if let Some(e) = csr.nth_edge(*source, *nth) {
