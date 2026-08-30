@@ -1,44 +1,59 @@
-use csr2::{Edge, OutEdge, CSR};
+use csr2::{Edge, EdgeType, CSR};
 
 #[derive(Debug)]
-pub struct Visitor<'a, W, G> {
-    graph: &'a CSR<W, G>,
+pub struct Visitor<W, E>
+where
+    E: EdgeType,
+{
+    csr: CSR<W, E>,
 
-    stack: Vec<usize>,
-    visited: BitSet,
+    buf: Vec<[usize; 2]>,
+    used_node: BitSet,
+    used_edge: BitSet,
 }
 
-impl<'a, W, G> Visitor<'a, W, G> {
-    pub fn new(graph: &'a CSR<W, G>) -> Self {
-        let stack = Vec::with_capacity(graph.num_nodes() * 2);
-        let visited = BitSet::new(graph.num_nodes());
+impl<W, E> Visitor<W, E>
+where
+    E: EdgeType,
+{
+    pub fn new(csr: CSR<W, E>) -> Self {
+        let buf = Vec::with_capacity(csr.num_edges());
 
         Self {
-            graph,
-            stack,
-            visited,
+            buf,
+            used_node: BitSet::new(csr.num_nodes()),
+            used_edge: BitSet::new(csr.num_edges()),
+            csr,
         }
     }
 
-    /// 訪問履歴を削除する。
-    pub fn reset(&mut self) {
-        // FIXME: ビットセットはライブラリ化する
-        self.visited.0.fill(0);
+    pub fn visited(&self, i: usize) -> bool {
+        self.used_node.contains(i)
     }
 
-    /// 訪問済みなら`true`を返す。
-    pub fn is_visited(&self, i: usize) -> bool {
-        self.visited.get(i)
+    pub fn reset(&mut self) {
+        self.used_edge.clear();
+        self.used_node.clear();
     }
 
     /// `source`から未訪問の頂点をDFSする。
-    pub fn dfs(&'a mut self, source: usize) -> DFS<'a, W, G> {
-        self.stack.clear();
-        if !self.visited.get(source) {
-            self.visited.set(source);
-            self.stack.extend([source, 0]);
+    pub fn dfs<'a>(&'a mut self, source: usize) -> DFS<'a, W, E> {
+        if self.used_node.insert(source) {
+            self.buf.push([source, 0]);
         }
-        DFS(self)
+
+        DFS { visitor: self }
+    }
+
+    /// `source`から未訪問の頂点をBFSする。
+    pub fn bfs<'a>(&'a mut self, source: usize) -> BFS<'a, W, E> {
+        if self.used_node.insert(source) {
+            self.buf.push([source, 0]);
+        }
+        BFS {
+            visitor: self,
+            cursor: 0,
+        }
     }
 }
 
@@ -48,69 +63,77 @@ pub enum DFSTraversal<W> {
     Descend(Edge<W>),
     /// Ascend to the parent through the edge used to arrive here.
     Ascend(Edge<W>),
-    /// Glance an visited node through an unused edge.
+    /// Glance an visited node through an unused edge, which will be marked as used.
     /// Stay in the current node.
     Glance(Edge<W>),
 }
 
-#[derive(Debug, Clone)]
-pub enum Traverse<W> {
-    /// 未訪問の頂点に進む未使用の辺。頂点を移動する。
-    Visit(Edge<W>),
-    /// 逆進する使用済みの辺。頂点を移動する。
-    Leave(Edge<W>),
-    /// 訪問済み頂点に至る未使用の辺。頂点を移動しない。
-    Visited(Edge<W>),
+#[derive(Debug)]
+pub struct DFS<'a, W, E>
+where
+    E: EdgeType,
+{
+    visitor: &'a mut Visitor<W, E>,
 }
 
-#[derive(Debug)]
-pub struct DFS<'a, W, G>(&'a mut Visitor<'a, W, G>);
-
-impl<'a, W, G> DFS<'a, W, G> {
-    pub fn next(&mut self) -> Option<Traverse<&W>> {
+impl<'a, W, E> DFS<'a, W, E>
+where
+    E: EdgeType,
+{
+    pub fn next(&mut self) -> Option<DFSTraversal<&W>> {
         let Visitor {
-            graph,
-            stack,
-            visited,
-        } = self.0;
+            csr,
+            buf,
+            used_node,
+            used_edge,
+        } = self.visitor;
 
-        let [source, nth] = stack.last_chunk_mut::<2>()?;
+        if !E::DIRECTED {
+            let [source, mut nth] = buf.pop()?;
+            // Skip used edges
+            while csr
+                .nth_edge(source, nth)
+                .is_some_and(|e| !used_edge.insert(e.index))
+            {
+                nth += 1;
+            }
+            buf.push([source, nth]);
+        }
 
-        // HACK: see <https://docs.rs/polonius-the-crab/latest/polonius_the_crab/index.html>
-        if graph.nth_edge(*source, *nth).is_some() {
-            let OutEdge { target, weight } = graph.nth_edge(*source, *nth).unwrap();
-            *nth += 1;
+        let [source, nth] = buf.pop()?;
+        if let Some(e) = csr.nth_edge(source, nth).map(|e|
+                // SAFETY: Giving correct source
+                unsafe { e.set_source(source) })
+        {
+            buf.push([source, nth + 1]);
 
-            let e = Edge {
-                source: *source,
-                target,
-                weight,
-            };
-
-            if visited.get(target) {
-                return Some(Traverse::Visited(e));
+            if used_node.insert(e.target) {
+                buf.push([e.target, 0]);
+                return Some(DFSTraversal::Descend(e));
             } else {
-                visited.set(*source);
-                stack.extend([target, 0]);
-                return Some(Traverse::Visit(e));
+                return Some(DFSTraversal::Glance(e));
             }
         } else {
-            stack.pop();
-            stack.pop();
-
-            let &[parent, nth] = stack.last_chunk::<2>()?;
-            let OutEdge { target, weight } = graph
-                .nth_edge(parent, nth - 1)
-                .expect("this edge has already been passed.");
-
-            let e = Edge {
-                source: parent,
-                target,
-                weight,
+            let e = {
+                let &[parent, nth] = buf.last()?;
+                let e = csr
+                    .nth_edge(parent, nth - 1)
+                    .expect("this edge has already been used.");
+                // SAFETY: Giving correct source
+                unsafe { e.set_source(parent) }
             };
 
-            return Some(Traverse::Leave(e));
+            return Some(DFSTraversal::Ascend(e));
         }
+    }
+}
+
+impl<'a, W, E> Drop for DFS<'a, W, E>
+where
+    E: EdgeType,
+{
+    fn drop(&mut self) {
+        self.visitor.buf.clear();
     }
 }
 
@@ -122,47 +145,55 @@ pub enum BFSTraversal<W> {
 }
 
 #[derive(Debug)]
-pub struct BFS<'a, W, G> {
-    visitor: &'a mut Visitor<'a, W, G>,
-    n: usize,
+pub struct BFS<'a, W, E>
+where
+    E: EdgeType,
+{
+    visitor: &'a mut Visitor<W, E>,
+    cursor: usize,
 }
 
-impl<'a, W, G> BFS<'a, W, G> {
-    fn next(&mut self) -> Option<Traverse<&W>> {
+impl<'a, W, E> BFS<'a, W, E>
+where
+    E: EdgeType,
+{
+    pub fn next(&mut self) -> Option<BFSTraversal<&W>> {
         let Visitor {
-            graph,
-            stack,
-            visited,
+            csr,
+            buf,
+            used_node,
+            used_edge,
         } = self.visitor;
 
-        let &[source, nth, parent] = stack.as_chunks::<3>().0.get(self.n)?;
-        let OutEdge { target, weight } = graph.nth_edge(source, nth).unwrap();
-
-        self.n += 1;
-
-        // 初回訪問時のみ辺を追加する
-        if visited.get(source) {
-            stack.extend(
-                graph
-                    .out_edges(source)
-                    .iter()
-                    .enumerate()
-                    .flat_map(|(i, e)| [e.target, i, source]),
-            );
-        }
-
-        let e = Edge {
-            source,
-            target,
-            weight,
+        // Find next unused edge.
+        let e = loop {
+            let [source, nth] = buf.get_mut(self.cursor)?;
+            if let Some(e) = csr.nth_edge(*source, *nth) {
+                *nth += 1;
+                if used_edge.insert(e.index) {
+                    // SAFETY: Giving correct `source`
+                    break unsafe { e.set_source(*source) };
+                }
+            } else {
+                self.cursor += 1;
+            }
         };
-        Some(if !visited.get(target) {
-            Traverse::Visit(e)
-        } else if target == parent {
-            todo!()
+
+        if used_node.insert(e.target) {
+            buf.push([e.target, 0]);
+            Some(BFSTraversal::Discover(e))
         } else {
-            Traverse::Visited(e)
-        })
+            Some(BFSTraversal::Glance(e))
+        }
+    }
+}
+
+impl<'a, W, E> Drop for BFS<'a, W, E>
+where
+    E: EdgeType,
+{
+    fn drop(&mut self) {
+        self.visitor.buf.clear();
     }
 }
 
@@ -176,12 +207,18 @@ impl BitSet {
         Self(vec![0; n.div_ceil(usize::BITS as usize)])
     }
 
-    fn set(&mut self, i: usize) {
-        let (b, i) = (i / Self::B, i % Self::B);
-        self.0[b] |= (1 as usize) << i;
+    fn clear(&mut self) {
+        self.0.fill(0);
     }
 
-    fn get(&self, i: usize) -> bool {
+    fn insert(&mut self, i: usize) -> bool {
+        let (b, i) = (i / Self::B, i % Self::B);
+        let was_empty = (self.0[b] >> i) & 1 == 0;
+        self.0[b] |= 1 << i;
+        was_empty
+    }
+
+    fn contains(&self, i: usize) -> bool {
         let (b, i) = (i / Self::B, i % Self::B);
 
         (self.0[b] >> i) & 1 > 0

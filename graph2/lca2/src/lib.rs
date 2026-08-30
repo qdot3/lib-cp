@@ -1,4 +1,4 @@
-use csr2::CSR;
+use csr2::{EdgeType, CSR};
 use search::Visitor;
 
 pub struct LCA {
@@ -10,17 +10,10 @@ impl LCA {
     ///
     /// - `graph` must be a tree
     /// - If `graph` is directed, `root` must be a root of the `graph`
-    pub fn new<W, G>(graph: &CSR<W, G>, root: usize) -> Self {
-        let mut visitor = Visitor::new(graph);
-
-        let mut dfs = visitor.dfs(root);
-        while let Some(t) = dfs.next() {
-            match t {
-                search::Traverse::Visit(_) => todo!(),
-                search::Traverse::Leave(_) => todo!(),
-                search::Traverse::Visited(_) => (),
-            }
-        }
+    pub fn new<W, E>(graph: &CSR<W, E>, root: usize) -> Self
+    where
+        E: EdgeType,
+    {
         todo!()
     }
 

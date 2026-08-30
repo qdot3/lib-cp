@@ -1,16 +1,24 @@
 use std::marker::PhantomData;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct EdgeIndex(u32);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Edge<W> {
     pub source: usize,
     pub target: usize,
     pub weight: W,
+    pub index: usize,
 }
 
 impl<W> Edge<W> {
-    pub const fn reverse(mut self) -> Self {
-        std::mem::swap(&mut self.source, &mut self.target);
-        self
+    pub fn discard_weight(self) -> Edge<()> {
+        Edge {
+            source: self.source,
+            target: self.target,
+            weight: (),
+            index: self.index,
+        }
     }
 }
 
@@ -18,6 +26,21 @@ impl<W> Edge<W> {
 pub struct OutEdge<W> {
     pub target: usize,
     pub weight: W,
+    pub index: usize,
+}
+
+impl<W> OutEdge<W> {
+    /// # SAFETY
+    ///
+    /// Giving an incorrect `source` results in UB.
+    pub unsafe fn set_source(self, source: usize) -> Edge<W> {
+        Edge {
+            source,
+            target: self.target,
+            weight: self.weight,
+            index: self.index,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -26,70 +49,106 @@ pub struct Directed;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Undirected;
 
+pub trait EdgeType {
+    const DIRECTED: bool;
+}
+
+impl EdgeType for Directed {
+    const DIRECTED: bool = true;
+}
+
+impl EdgeType for Undirected {
+    const DIRECTED: bool = false;
+}
+
 #[derive(Debug, Clone)]
-pub struct CSRBuilder<W, G> {
+pub struct CSRBuilder<W, E>
+where
+    E: EdgeType,
+{
     edges: Vec<Edge<W>>,
     num_node: usize,
 
-    graph_ty: PhantomData<G>,
+    edge_type: PhantomData<E>,
 }
 
 impl<W> CSRBuilder<W, Directed> {
     #[must_use]
-    pub fn with_capacity(capacity: usize, num_node: usize) -> Self {
+    pub fn with_capacity(num_node: usize, capacity: usize) -> Self {
         Self {
             edges: Vec::with_capacity(capacity),
             num_node,
-            graph_ty: PhantomData,
+            edge_type: PhantomData,
         }
     }
 
     /// Appends a directed edge.
-    ///
-    /// # Panics
-    ///
-    /// Node index must be compact.
-    pub fn push_edge(&mut self, edge: Edge<W>) {
-        assert!(
-            edge.source.max(edge.target) < self.num_node,
-            "Node index must be compact"
-        );
-        self.edges.push(edge);
+    /// Returns `true` if `source` and `target` are valid.
+    pub fn push_edge(&mut self, source: usize, target: usize, weight: W) -> bool {
+        if source.max(target) < self.num_node {
+            let index = self.edges.len();
+            self.edges.push(Edge {
+                source,
+                target,
+                weight,
+                index,
+            });
+
+            true
+        } else {
+            false
+        }
     }
 }
 
 impl<W> CSRBuilder<W, Undirected> {
     #[must_use]
-    pub fn with_capacity(capacity: usize, num_node: usize) -> Self {
+    pub fn with_capacity(num_node: usize, capacity: usize) -> Self {
         Self {
             edges: Vec::with_capacity(capacity.saturating_mul(2)),
             num_node,
-            graph_ty: PhantomData,
+            edge_type: PhantomData,
         }
     }
 
     /// Appends an undirected edge.
     ///
     /// Node index must be compact.
-    pub fn push_edge(&mut self, edge: Edge<W>)
+    pub fn push_edge(&mut self, source: usize, target: usize, weight: W) -> bool
     where
         W: Clone,
     {
-        assert!(
-            edge.source.max(edge.target) < self.num_node,
-            "Node index must be compact"
-        );
-        self.edges.push(edge.clone());
-        self.edges.push(edge.reverse());
+        if source.max(target) < self.num_node {
+            let index = self.edges.len() / 2;
+            self.edges.push(Edge {
+                source,
+                target,
+                weight: weight.clone(),
+                index,
+            });
+            self.edges.push(Edge {
+                source: target,
+                target: source,
+                weight,
+                index,
+            });
+
+            true
+        } else {
+            false
+        }
     }
 }
 
-impl<W, G> CSRBuilder<W, G> {
+impl<W, E> CSRBuilder<W, E>
+where
+    E: EdgeType,
+{
     /// # Time complexity
     ///
     /// O(N + M), where `N` is the max index of nodes and `M` is the number of edges.
     #[must_use]
-    pub fn build(self) -> CSR<W, G> {
+    pub fn build(self) -> CSR<W, E> {
         let edges = self.edges;
         let n = self.num_node.checked_add(1).unwrap();
 
@@ -103,49 +162,60 @@ impl<W, G> CSRBuilder<W, G> {
         debug_assert_eq!(cnt[n - 1], edges.len());
 
         let n_edges = edges.len();
-        let mut target = Vec::with_capacity(edges.len());
+        let mut out_edges = Vec::with_capacity(edges.len());
         {
-            let uninit = target.spare_capacity_mut();
+            let uninit = out_edges.spare_capacity_mut();
             assert!(uninit.len() >= edges.len(), "guard");
 
             for Edge {
                 source,
                 target,
                 weight,
+                index,
             } in edges
             {
                 cnt[source] -= 1;
-                uninit[cnt[source] as usize].write(OutEdge { target, weight });
+                uninit[cnt[source] as usize].write(OutEdge {
+                    target,
+                    weight,
+                    index,
+                });
             }
         }
         // SAFETY:
-        // - `target` has sufficient capacity, or this function would have already panicked.
+        // - `out_edges` has sufficient capacity, or this function would have already panicked.
         // - the first `n_edges` elements have been initialized.
-        unsafe { target.set_len(n_edges) };
+        unsafe { out_edges.set_len(n_edges) };
 
         CSR {
-            target,
+            out_edges,
             partition: cnt,
 
-            graph_ty: PhantomData,
+            edge_type: PhantomData,
         }
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct CSR<W, G> {
-    target: Vec<OutEdge<W>>,
+pub struct CSR<W, E>
+where
+    E: EdgeType,
+{
+    out_edges: Vec<OutEdge<W>>,
     partition: Vec<usize>,
 
-    graph_ty: PhantomData<G>,
+    edge_type: PhantomData<E>,
 }
 
-impl<W, G> CSR<W, G> {
+impl<W, E> CSR<W, E>
+where
+    E: EdgeType,
+{
     /// # Panics
     ///
     /// Panics if `source` node does not exist.
     pub fn out_edges(&self, source: usize) -> &[OutEdge<W>] {
-        &self.target[self.partition[source]..self.partition[source + 1]]
+        &self.out_edges[self.partition[source]..self.partition[source + 1]]
     }
 
     /// # Panics
@@ -156,6 +226,7 @@ impl<W, G> CSR<W, G> {
             Some(OutEdge {
                 target: e.target,
                 weight: &e.weight,
+                index: e.index,
             })
         } else {
             None
@@ -166,29 +237,28 @@ impl<W, G> CSR<W, G> {
         // `partition` has at least one element.
         self.partition.len() - 1
     }
-}
 
-impl<W> CSR<W, Directed> {
-    pub const fn num_edges(&self) -> usize {
-        self.target.len()
-    }
-
-    pub fn nth_edge_mut(&mut self, source: usize, nth: usize) -> Option<OutEdge<&mut W>> {
-        let edges = &mut self.target[self.partition[source]..self.partition[source + 1]];
-        if let Some(e) = edges.get_mut(nth) {
-            Some(OutEdge {
-                target: e.target,
-                weight: &mut e.weight,
-            })
+    pub fn num_edges(&self) -> usize {
+        if E::DIRECTED {
+            self.out_edges.len()
         } else {
-            None
+            self.out_edges.len() / 2
         }
     }
 }
 
-impl<W> CSR<W, Undirected> {
-    pub const fn num_edges(&self) -> usize {
-        self.target.len() / 2
+impl<W> CSR<W, Directed> {
+    pub fn nth_edge_mut(&mut self, source: usize, nth: usize) -> Option<OutEdge<&mut W>> {
+        let edges = &mut self.out_edges[self.partition[source]..self.partition[source + 1]];
+        if let Some(e) = edges.get_mut(nth) {
+            Some(OutEdge {
+                target: e.target,
+                weight: &mut e.weight,
+                index: e.index,
+            })
+        } else {
+            None
+        }
     }
 }
 
@@ -247,12 +317,16 @@ impl<W> CSR<W, Directed> {
                                 .expect("loop is detected");
 
                             let iter = stack.into_iter().skip(i).map(|(source, nth)| {
-                                let &OutEdge { target, weight } =
-                                    &self.nth_edge(source, nth - 1).unwrap();
+                                let &OutEdge {
+                                    target,
+                                    weight,
+                                    index,
+                                } = &self.nth_edge(source, nth - 1).unwrap();
                                 Edge {
                                     source,
                                     target,
                                     weight,
+                                    index,
                                 }
                             });
                             return Some(iter);
