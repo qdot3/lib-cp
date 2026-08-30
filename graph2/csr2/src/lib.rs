@@ -12,11 +12,11 @@ pub struct Edge<W> {
 }
 
 impl<W> Edge<W> {
-    pub fn discard_weight(self) -> Edge<()> {
+    pub fn map_weight<T>(self, f: impl FnOnce(W) -> T) -> Edge<T> {
         Edge {
             source: self.source,
             target: self.target,
-            weight: (),
+            weight: f(self.weight),
             index: self.index,
         }
     }
@@ -30,6 +30,14 @@ pub struct OutEdge<W> {
 }
 
 impl<W> OutEdge<W> {
+    pub fn map_weight<T>(self, f: impl FnOnce(W) -> T) -> OutEdge<T> {
+        OutEdge {
+            target: self.target,
+            weight: f(self.weight),
+            index: self.index,
+        }
+    }
+
     /// # SAFETY
     ///
     /// Giving an incorrect `source` results in UB.
