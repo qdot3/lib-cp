@@ -46,15 +46,13 @@ where
         &self.csr
     }
 
-    /// Give back ownership of the inner graph.
     pub fn into_csr(self) -> CSR<W, E> {
         self.csr
     }
 
     // pub fn replace_csr(mut self)
 
-    /// Creates a lending iterator for a DFS traversal starting at `source`,
-    /// visiting only unvisited nodes.
+    /// Creates a lending iterator for a DFS traversal starting at `source`.
     pub fn dfs<'a>(&'a mut self, source: usize) -> DFS<'a, W, E> {
         if self.used_node.insert(source) {
             self.buf.push([source, 0]);
@@ -63,8 +61,7 @@ where
         DFS { visitor: self }
     }
 
-    /// Creates a lending iterator for a BFS traversal starting at `source`,
-    /// visiting only unvisited nodes.
+    /// Creates a lending iterator for a BFS traversal starting at `source`.
     pub fn bfs<'a>(&'a mut self, source: usize) -> BFS<'a, W, E> {
         if self.used_node.insert(source) {
             self.buf.push([source, 0]);
@@ -76,7 +73,6 @@ where
     }
 }
 
-/// One step result produced while doing a DFS.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum DFSTraversal<W> {
     /// Went deeper: moved into a not-yet-visited node through an unused edge.
@@ -89,7 +85,7 @@ pub enum DFSTraversal<W> {
     Glance(Edge<W>),
 }
 
-/// Lending iterator performing DFS.
+/// Lending iterator performing DFS, visiting unvisited nodes through unused edges.
 #[derive(Debug)]
 pub struct DFS<'a, W, E>
 where
@@ -171,7 +167,7 @@ pub enum BFSTraversal<W> {
     Glance(Edge<W>),
 }
 
-/// Lending iterator performing BFS.
+/// Lending iterator performing BFS, visiting unvisited nodes through unused edges.
 #[derive(Debug)]
 pub struct BFS<'a, W, E>
 where
@@ -227,26 +223,20 @@ where
     }
 }
 
-/// A simple fixed-size bit set, used to mark visited nodes / used edges.
 #[derive(Debug, Clone)]
 struct BitSet(Vec<usize>);
 
 impl BitSet {
-    /// Number of bits stored in one `usize` word.
     const B: usize = usize::BITS as usize;
 
-    /// Create a bit set big enough to hold `n` bits (all zero/false).
     fn new(n: usize) -> Self {
         Self(vec![0; n.div_ceil(usize::BITS as usize)])
     }
 
-    /// Reset all bits back to zero/false.
     fn clear(&mut self) {
         self.0.fill(0);
     }
 
-    /// Set bit `i` to true. Returns `true` if it was false before
-    /// (i.e. this is the first time `i` is inserted).
     fn insert(&mut self, i: usize) -> bool {
         let (b, i) = (i / Self::B, i % Self::B);
         let was_empty = (self.0[b] >> i) & 1 == 0;
@@ -254,7 +244,6 @@ impl BitSet {
         was_empty
     }
 
-    /// Check whether bit `i` is set.
     fn contains(&self, i: usize) -> bool {
         let (b, i) = (i / Self::B, i % Self::B);
 

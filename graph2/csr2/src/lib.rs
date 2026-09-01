@@ -20,6 +20,10 @@ impl<W> Edge<W> {
             index: self.index,
         }
     }
+
+    pub fn is_self_loop(&self) -> bool {
+        self.source == self.target
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

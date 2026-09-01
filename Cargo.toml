@@ -50,6 +50,7 @@ members = [
     "graph2/search",
     "graph2/lca2",
     "math/crt",
+    "graph2/lowlink",
 ]
 
 [workspace.package]
@@ -103,6 +104,7 @@ tree_dp = { path = "./graph/tree_dp" }
 csr2 = { path = "./graph2/csr2" }
 scc2 = { path = "./graph2/scc2" }
 search = { path = "./graph2/search" }
+lowlink = { path = "./graph2/lowlink" }
 
 factorial = { path = "./math/factorial" }
 floor_sum = { path = "./math/floor_sum" }
