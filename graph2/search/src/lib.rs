@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use csr2::{Edge, EdgeType, Undirected, CSR};
+use csr2::{Edge, EdgeType, CSR};
 
 #[derive(Debug)]
 pub struct Visitor<'a, W, E>
@@ -38,15 +38,10 @@ where
 
     /// Clear all "visited" state, so this `Visitor` can be reused for a brand-new traversal.
     pub fn reset(&mut self) {
+        self.buf.clear();
         self.used_edge.clear();
         self.used_node.clear();
     }
-
-    pub fn csr(&self) -> &CSR<W, E> {
-        &self.csr
-    }
-
-    // pub fn replace_csr(mut self)
 
     /// `root`から未使用の辺で DFS をする。
     ///
@@ -161,13 +156,7 @@ where
     }
 }
 
-impl<'a, W> Visitor<'a, W, Undirected> {
-    pub fn lowlink<B>(&mut self) -> ControlFlow<B> {
-        ControlFlow::Continue(())
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DFSTraversal<W> {
     /// 未使用の木辺を降る
     Descend(Edge<W>),
@@ -178,13 +167,14 @@ pub enum DFSTraversal<W> {
 }
 
 /// One step result produced while doing a BFS.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BFSTraversal<W> {
     /// Found a brand-new node through an unused edge.
     Discover(Edge<W>),
     /// Looked at an already-visited node through an unused edge.
     Glance(Edge<W>),
 }
+
 #[derive(Debug, Clone)]
 struct BitSet(Vec<usize>);
 
