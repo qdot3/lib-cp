@@ -1,4 +1,6 @@
-use csr2::{Edge, EdgeType, CSR};
+use std::ops::ControlFlow;
+
+use csr2::{Edge, EdgeType, Undirected, CSR};
 
 #[derive(Debug)]
 pub struct Visitor<W, E>
@@ -19,9 +21,7 @@ where
     E: EdgeType,
 {
     pub fn new(csr: CSR<W, E>) -> Self {
-        // Reserve capacity up front based on the number of edges,
-        // so `buf` does not need to reallocate during traversal.
-        let buf = Vec::with_capacity(csr.num_edges());
+        let buf = Vec::with_capacity(csr.num_nodes());
 
         Self {
             buf,
@@ -52,110 +52,133 @@ where
 
     // pub fn replace_csr(mut self)
 
-    /// Creates a lending iterator for a DFS traversal starting at `source`.
-    pub fn dfs<'a>(&'a mut self, source: usize) -> DFS<'a, W, E> {
-        if self.used_node.insert(source) {
-            self.buf.push([source, 0]);
-        }
-
-        DFS { visitor: self }
-    }
-
-    /// Creates a lending iterator for a BFS traversal starting at `source`.
-    pub fn bfs<'a>(&'a mut self, source: usize) -> BFS<'a, W, E> {
-        if self.used_node.insert(source) {
-            self.buf.push([source, 0]);
-        }
-        BFS {
-            visitor: self,
-            cursor: 0,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum DFSTraversal<W> {
-    /// Went deeper: moved into a not-yet-visited node through an unused edge.
-    Descend(Edge<W>),
-    /// Went back up to the parent node, through the edge that was used
-    /// to originally arrive at the current node.
-    Ascend(Edge<W>),
-    /// Looked at an already-visited node through an unused edge
-    /// (edge gets marked as used), but stayed at the current node.
-    Glance(Edge<W>),
-}
-
-/// Lending iterator performing DFS, visiting unvisited nodes through unused edges.
-#[derive(Debug)]
-pub struct DFS<'a, W, E>
-where
-    E: EdgeType,
-{
-    visitor: &'a mut Visitor<W, E>,
-}
-
-impl<'a, W, E> DFS<'a, W, E>
-where
-    E: EdgeType,
-{
-    pub fn next(&mut self) -> Option<DFSTraversal<&W>> {
+    /// `root`から未使用の辺で DFS をする。
+    ///
+    /// # Time complexity
+    ///
+    /// 未訪問の`root`のみが与えられる場合、グラフ全体で O(|V| + |E|)。
+    pub fn dfs<B>(
+        &mut self,
+        root: usize,
+        mut cursor: impl FnMut(DFSTraversal<&W>) -> ControlFlow<B>,
+    ) -> ControlFlow<B> {
         let Visitor {
             csr,
             buf,
             used_node,
             used_edge,
-        } = self.visitor;
+        } = self;
 
-        // Skip used edges
-        if !E::DIRECTED {
-            let [source, mut nth] = buf.pop()?;
+        used_node.insert(root);
+        buf.clear();
+        buf.push([root, 0]);
+
+        loop {
+            let Some([source, mut nth]) = buf.pop() else {
+                return ControlFlow::Continue(());
+            };
+
+            // 使用済みの辺は無視する
             while csr
                 .nth_edge(source, nth)
                 .is_some_and(|e| !used_edge.insert(e.index))
             {
                 nth += 1;
             }
-            buf.push([source, nth]);
-        }
 
-        let [source, nth] = buf.pop()?;
-        if let Some(e) = csr.nth_edge(source, nth).map(|e|
+            // 未使用の辺があれば、それを使う。
+            if let Some(e) = csr.nth_edge(source, nth).map(|e|
                 // SAFETY: `source` is correct.
                 unsafe { e.set_source(source) })
-        {
-            // There might be more edges from `source` after this one,
-            // so push back the frame with the next edge index to try.
-            buf.push([source, nth + 1]);
+            {
+                // 次に試す辺をスタックのトップに置く
+                buf.push([source, nth + 1]);
+
+                if used_node.insert(e.target) {
+                    buf.push([e.target, 0]);
+                    cursor(DFSTraversal::Descend(e))?;
+                } else {
+                    cursor(DFSTraversal::Glance(e))?;
+                }
+            }
+            // すべての辺を使用したので、木辺を昇る。
+            else if let Some([parent, nth]) = buf.last().copied() {
+                let e = csr
+                    .nth_edge(parent, nth - 1)
+                    .map(|e| {
+                        // SAFETY: `parent` is correct.
+                        unsafe { e.set_source(parent) }
+                    })
+                    .unwrap();
+
+                cursor(DFSTraversal::Ascend(e))?;
+            }
+        }
+    }
+
+    /// `root`から未使用の辺で BFS をする。
+    ///
+    /// # Time complexity
+    ///
+    /// 未訪問の`root`のみが与えられる場合、グラフ全体で O(|V| + |E|)。
+    pub fn bfs<B>(
+        &mut self,
+        root: usize,
+        mut cursor: impl FnMut(BFSTraversal<&W>) -> ControlFlow<B>,
+    ) -> ControlFlow<B> {
+        let Visitor {
+            csr,
+            buf,
+            used_node,
+            used_edge,
+        } = self;
+
+        used_node.insert(root);
+        buf.clear();
+        buf.push([root, 0]);
+
+        let mut i = 0;
+        loop {
+            let e = loop {
+                let Some([source, nth]) = buf.get_mut(i) else {
+                    return ControlFlow::Continue(());
+                };
+                // 未使用の辺を探す
+                if let Some(e) = csr.nth_edge(*source, *nth) {
+                    *nth += 1;
+                    if used_edge.insert(e.index) {
+                        // SAFETY: `source` is correct.
+                        break unsafe { e.set_source(*source) };
+                    }
+                } else {
+                    i += 1;
+                }
+            };
 
             if used_node.insert(e.target) {
                 buf.push([e.target, 0]);
-                return Some(DFSTraversal::Descend(e));
+                cursor(BFSTraversal::Discover(e))?;
             } else {
-                return Some(DFSTraversal::Glance(e));
+                cursor(BFSTraversal::Glance(e))?;
             }
-        } else {
-            // No more edges left to try from `source`.
-            let e = {
-                let &[parent, nth] = buf.last()?;
-                let e = csr
-                    .nth_edge(parent, nth - 1)
-                    .expect("this edge has already been used.");
-                // SAFETY: `parent` is correct source node.
-                unsafe { e.set_source(parent) }
-            };
-
-            return Some(DFSTraversal::Ascend(e));
         }
     }
 }
 
-impl<'a, W, E> Drop for DFS<'a, W, E>
-where
-    E: EdgeType,
-{
-    fn drop(&mut self) {
-        self.visitor.buf.clear();
+impl<W> Visitor<W, Undirected> {
+    pub fn lowlink<B>(&mut self) -> ControlFlow<B> {
+        ControlFlow::Continue(())
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum DFSTraversal<W> {
+    /// 未使用の木辺を降る
+    Descend(Edge<W>),
+    /// 使用済みの木辺を昇る
+    Ascend(Edge<W>),
+    /// 訪問済み頂点に向かう未使用の辺を見るが、移動しない。
+    Glance(Edge<W>),
 }
 
 /// One step result produced while doing a BFS.
@@ -166,63 +189,6 @@ pub enum BFSTraversal<W> {
     /// Looked at an already-visited node through an unused edge.
     Glance(Edge<W>),
 }
-
-/// Lending iterator performing BFS, visiting unvisited nodes through unused edges.
-#[derive(Debug)]
-pub struct BFS<'a, W, E>
-where
-    E: EdgeType,
-{
-    visitor: &'a mut Visitor<W, E>,
-    cursor: usize,
-}
-
-impl<'a, W, E> BFS<'a, W, E>
-where
-    E: EdgeType,
-{
-    pub fn next(&mut self) -> Option<BFSTraversal<&W>> {
-        let Visitor {
-            csr,
-            buf,
-            used_node,
-            used_edge,
-        } = self.visitor;
-
-        let e = loop {
-            let [source, nth] = buf.get_mut(self.cursor)?;
-            if let Some(e) = csr.nth_edge(*source, *nth) {
-                *nth += 1;
-                if used_edge.insert(e.index) {
-                    // Found an edge that has not been used yet.
-                    // SAFETY: `source` is correct.
-                    break unsafe { e.set_source(*source) };
-                }
-                // Otherwise this edge was already used.
-            } else {
-                // No edges left in this frame, advance to the next node.
-                self.cursor += 1;
-            }
-        };
-
-        if used_node.insert(e.target) {
-            buf.push([e.target, 0]);
-            Some(BFSTraversal::Discover(e))
-        } else {
-            Some(BFSTraversal::Glance(e))
-        }
-    }
-}
-
-impl<'a, W, E> Drop for BFS<'a, W, E>
-where
-    E: EdgeType,
-{
-    fn drop(&mut self) {
-        self.visitor.buf.clear();
-    }
-}
-
 #[derive(Debug, Clone)]
 struct BitSet(Vec<usize>);
 

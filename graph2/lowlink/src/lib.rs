@@ -1,3 +1,5 @@
+use std::ops::ControlFlow;
+
 use csr2::{Edge, Undirected, CSR};
 use search::Visitor;
 
@@ -39,8 +41,7 @@ pub fn low_link<W>(
             n_visited += 1;
 
             let mut deg_root = 0;
-            let mut dfs = visitor.dfs(i);
-            while let Some(edge) = dfs.next() {
+            let _ = visitor.dfs::<()>(i, |edge| {
                 match edge {
                     // 木辺を降る
                     search::DFSTraversal::Descend(edge) => {
@@ -69,13 +70,13 @@ pub fn low_link<W>(
 
                         // edge を通らずに target から source に行けないので、これは橋
                         if s[0] < t[1] {
+                            bridge(edge);
                             // 橋の下流がECC
                             {
                                 let i = ecc_stack.iter().rposition(|v| *v == edge.target).unwrap();
                                 ecc(&ecc_stack[i..]);
                                 ecc_stack.truncate(i);
                             }
-                            bridge(edge);
                         }
                         // source を通らずにその祖先に到達できないので、これは関節点
                         if edge.source != i && s[0] <= t[1] {
@@ -83,7 +84,8 @@ pub fn low_link<W>(
                             // 関節点から下流がBCC
                             {
                                 let i = bcc_stack.iter().rposition(|v| *v == edge.target).unwrap();
-                                // 暗黙に source をもつ
+                                // 暗黙に source をもつ。ループ上に関節点が複数ある場合を考えると、
+                                // source 位置を探すのは誤りで、他のBCCも取り込んでしまう。
                                 bcc_stack.push(edge.source);
                                 bcc(&bcc_stack[i..]);
                                 bcc_stack.truncate(i);
@@ -99,7 +101,9 @@ pub fn low_link<W>(
                         s[1] = s[1].min(t[0]);
                     }
                 }
-            }
+
+                ControlFlow::Continue(())
+            });
 
             if !ecc_stack.is_empty() {
                 ecc(&ecc_stack);
