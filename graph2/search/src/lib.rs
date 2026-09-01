@@ -3,11 +3,11 @@ use std::ops::ControlFlow;
 use csr2::{Edge, EdgeType, Undirected, CSR};
 
 #[derive(Debug)]
-pub struct Visitor<W, E>
+pub struct Visitor<'a, W, E>
 where
     E: EdgeType,
 {
-    csr: CSR<W, E>,
+    csr: &'a CSR<W, E>,
 
     // Working buffer used as a stack (DFS) or queue (BFS).
     // Each entry is [node_index, next_edge_index_to_try].
@@ -16,11 +16,11 @@ where
     used_edge: BitSet,
 }
 
-impl<W, E> Visitor<W, E>
+impl<'a, W, E> Visitor<'a, W, E>
 where
     E: EdgeType,
 {
-    pub fn new(csr: CSR<W, E>) -> Self {
+    pub fn new(csr: &'a CSR<W, E>) -> Self {
         let buf = Vec::with_capacity(csr.num_nodes());
 
         Self {
@@ -44,10 +44,6 @@ where
 
     pub fn csr(&self) -> &CSR<W, E> {
         &self.csr
-    }
-
-    pub fn into_csr(self) -> CSR<W, E> {
-        self.csr
     }
 
     // pub fn replace_csr(mut self)
@@ -165,7 +161,7 @@ where
     }
 }
 
-impl<W> Visitor<W, Undirected> {
+impl<'a, W> Visitor<'a, W, Undirected> {
     pub fn lowlink<B>(&mut self) -> ControlFlow<B> {
         ControlFlow::Continue(())
     }

@@ -10,12 +10,12 @@ use search::Visitor;
 ///
 /// O(|E| + |V|)
 pub fn low_link<W>(
-    csr: CSR<W, Undirected>,
+    csr: &CSR<W, Undirected>,
     mut bridge: impl FnMut(Edge<&W>),
     mut articulation_point: impl FnMut(usize),
     mut ecc: impl FnMut(&[usize]),
     mut bcc: impl FnMut(&[usize]),
-) -> CSR<W, Undirected> {
+) {
     let n = csr.num_nodes();
     let mut visitor = Visitor::new(csr);
 
@@ -117,6 +117,4 @@ pub fn low_link<W>(
     }
     // SAFETY: すべての頂点を訪問し、その際に初期化している。
     unsafe { ord_low.set_len(n) };
-
-    visitor.into_csr()
 }
