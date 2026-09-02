@@ -194,7 +194,6 @@ version = "0.1.0"
 dependencies = [
  "csr2",
  "op_min",
- "rmq",
  "search",
  "sparse_table 0.2.0",
  "traits",
@@ -394,6 +393,7 @@ dependencies = [
  "itertools",
  "kmp",
  "lca",
+ "lca2",
  "lcp",
  "lowlink",
  "manacher",

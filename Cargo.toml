@@ -102,9 +102,10 @@ scc = { path = "./graph/scc" }
 tree_dp = { path = "./graph/tree_dp" }
 
 csr2 = { path = "./graph2/csr2" }
-scc2 = { path = "./graph2/scc2" }
-search = { path = "./graph2/search" }
+lca2 = { path = "./graph2/lca2" }
 lowlink = { path = "./graph2/lowlink" }
+search = { path = "./graph2/search" }
+scc2 = { path = "./graph2/scc2" }
 
 factorial = { path = "./math/factorial" }
 floor_sum = { path = "./math/floor_sum" }

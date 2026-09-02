@@ -60,6 +60,11 @@ lca = { workspace = true }
 scc = { workspace = true }
 tree_dp = { workspace = true }
 
+csr2.workspace = true
+lca2.workspace = true
+lowlink.workspace = true
+search.workspace = true
+
 # disjoint_sparse_table = { workspace = true }
 # sparse_table = { workspace = true }
 # rmq = { workspace = true }

@@ -1,43 +1,103 @@
+use std::ops::ControlFlow;
+
 use csr2::{EdgeType, CSR};
+use op_min::OpMin;
 use search::Visitor;
+use sparse_table::SparseTable;
 
 pub struct LCA {
-    in_out: Vec<usize>,
+    time: Box<[usize]>,
+    // (depth, index)
+    rmq: SparseTable<(OpMin<usize>, OpMin<usize>)>,
 }
 
 impl LCA {
-    /// # Preconditions
+    /// # SAFETY
     ///
-    /// - `graph` must be a tree
-    /// - If `graph` is directed, `root` must be a root of the `graph`
-    pub fn new<W, E>(graph: &CSR<W, E>, root: usize) -> Self
+    /// `root`からすべての頂点に到達可能
+    ///
+    /// # Time complexity
+    ///
+    /// O(V log V)
+    pub unsafe fn new<W, E>(csr: &CSR<W, E>, root: usize) -> Option<Self>
     where
         E: EdgeType,
     {
-        todo!()
+        let mut time = Vec::with_capacity(csr.num_nodes());
+        let mut depth = Vec::with_capacity(csr.num_nodes() * 2);
+        {
+            let time = time.spare_capacity_mut();
+            assert!(time.len() >= csr.num_nodes());
+            let depth = depth.spare_capacity_mut();
+            assert!(depth.len() >= csr.num_nodes() * 2);
+
+            let mut t = 0;
+            let mut d = 0;
+            time[root * 2].write(t);
+            depth[t].write((d, root));
+
+            let mut visitor = Visitor::new(csr);
+            let res = visitor.dfs(root, |e| {
+                match e {
+                    search::DFSTraversal::Descend(edge) => {
+                        t += 1;
+                        d += 1;
+                        time[edge.target].write(t);
+                        depth[t].write((d, edge.target));
+                    }
+                    search::DFSTraversal::Ascend(edge) => {
+                        t += 1;
+                        d -= 1;
+                        depth[t].write((d, edge.source));
+                    }
+                    search::DFSTraversal::Glance(_) => {
+                        // early return
+                        return ControlFlow::Break(());
+                    }
+                }
+                ControlFlow::Continue(())
+            });
+            if res.is_break() {
+                return None;
+            }
+        }
+        // SAFETY: Guaranteed by caller
+        unsafe {
+            time.set_len(csr.num_nodes());
+            depth.set_len(csr.num_nodes() * 2);
+        }
+
+        let rmq = SparseTable::from(depth.into_boxed_slice());
+        Some(Self {
+            time: time.into_boxed_slice(),
+            rmq,
+        })
     }
 
-    pub fn lcs_pair(&self, x: usize, y: usize) -> usize {
-        let mut l = self.in_out[x * 2];
-        let mut r = self.in_out[y * 2];
+    /// # Time complexity
+    ///
+    /// Θ(1)
+    pub fn lca_pair(&self, x: usize, y: usize) -> Option<usize> {
+        let mut l = self.time.get(x).copied()?;
+        let mut r = self.time.get(y).copied()?;
         if l > r {
             std::mem::swap(&mut l, &mut r);
         }
 
-        todo!()
+        self.rmq.range_query(l..=r).map(|v| v.1)
     }
 
-    pub fn lcs(&self, nodes: &[usize]) -> Option<usize> {
+    /// # Time complexity
+    ///
+    /// Θ(`nodes.len()`)
+    pub fn lca(&self, nodes: &[usize]) -> Option<usize> {
         let [mut l, mut r] = [usize::MAX, usize::MIN];
         for &i in nodes {
-            l = l.min(self.in_out[i * 2]);
-            r = r.max(self.in_out[i * 2]);
+            let i = self.time.get(i).copied()?;
+            l = l.min(i);
+            r = r.max(i);
         }
 
-        if l <= r {
-            todo!()
-        } else {
-            None
-        }
+        self.rmq.range_query(l..=r).map(|v| v.1)
     }
 }
