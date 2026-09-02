@@ -53,11 +53,12 @@ where
         mut cursor: impl FnMut(DFSTraversal<&W>) -> ControlFlow<B>,
     ) -> ControlFlow<B> {
         let Visitor {
-            ref csr,
+            csr,
             buf,
             used_node,
             used_edge,
         } = self;
+        let csr = *csr;
 
         used_node.insert(root);
         buf.clear();
@@ -117,11 +118,12 @@ where
         mut cursor: impl FnMut(BFSTraversal<&W>) -> ControlFlow<B>,
     ) -> ControlFlow<B> {
         let Visitor {
-            ref csr,
+            csr,
             buf,
             used_node,
             used_edge,
         } = self;
+        let csr = *csr;
 
         used_node.insert(root);
         buf.clear();
