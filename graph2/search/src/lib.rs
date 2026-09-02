@@ -9,8 +9,7 @@ where
 {
     csr: &'a CSR<W, E>,
 
-    // Working buffer used as a stack (DFS) or queue (BFS).
-    // Each entry is [node_index, next_edge_index_to_try].
+    /// Working buffer used as a stack (DFS) or queue (BFS).
     buf: Vec<[usize; 2]>,
     used_node: BitSet,
     used_edge: BitSet,
@@ -54,7 +53,7 @@ where
         mut cursor: impl FnMut(DFSTraversal<&W>) -> ControlFlow<B>,
     ) -> ControlFlow<B> {
         let Visitor {
-            csr,
+            ref csr,
             buf,
             used_node,
             used_edge,
@@ -77,7 +76,7 @@ where
                 nth += 1;
             }
 
-            // 未使用の辺があれば、それを使う。
+            // 未使用の辺があれば、それを使う
             if let Some(e) = csr.nth_edge(source, nth).map(|e|
                 // SAFETY: `source` is correct.
                 unsafe { e.set_source(source) })
@@ -118,7 +117,7 @@ where
         mut cursor: impl FnMut(BFSTraversal<&W>) -> ControlFlow<B>,
     ) -> ControlFlow<B> {
         let Visitor {
-            csr,
+            ref csr,
             buf,
             used_node,
             used_edge,
@@ -166,12 +165,11 @@ pub enum DFSTraversal<W> {
     Glance(Edge<W>),
 }
 
-/// One step result produced while doing a BFS.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BFSTraversal<W> {
-    /// Found a brand-new node through an unused edge.
+    /// 未使用の辺で未訪問の頂点に移動する
     Discover(Edge<W>),
-    /// Looked at an already-visited node through an unused edge.
+    /// 未使用の辺で訪問済みの頂点を見るが、移動しない。
     Glance(Edge<W>),
 }
 
