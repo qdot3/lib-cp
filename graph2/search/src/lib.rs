@@ -47,6 +47,7 @@ where
     /// # Time complexity
     ///
     /// 未訪問の`root`のみが与えられる場合、グラフ全体で O(|V| + |E|)。
+    #[must_use]
     pub fn dfs<B>(
         &mut self,
         root: usize,
@@ -112,6 +113,7 @@ where
     /// # Time complexity
     ///
     /// 未訪問の`root`のみが与えられる場合、グラフ全体で O(|V| + |E|)。
+    #[must_use]
     pub fn bfs<B>(
         &mut self,
         root: usize,

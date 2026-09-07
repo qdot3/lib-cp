@@ -106,13 +106,13 @@ where
         -self.parent_or_size[self.find(x)].get() as usize
     }
 
-    pub fn leaders(&self) -> impl Iterator<Item = (i32, T::Set)> + '_ {
+    pub fn leaders(&self) -> impl Iterator<Item = (usize, T::Set)> + '_ {
         self.parent_or_size
             .iter()
             .zip(self.value.iter())
-            .filter_map(|(i, v)| {
-                let i = i.get();
-                (!i.is_negative()).then_some((i, *v))
+            .enumerate()
+            .filter_map(|(i, (pc, v))| {
+                (pc.get().is_negative()).then_some((i, *v))
             })
     }
 }
