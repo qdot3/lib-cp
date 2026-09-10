@@ -93,7 +93,7 @@ where
     /// # Time Complexity
     ///
     /// *O*(α(*N*)) amortized
-    pub fn same(self, x: usize, y: usize) -> bool {
+    pub fn same(&self, x: usize, y: usize) -> bool {
         self.find(x) == self.find(y)
     }
 
@@ -102,7 +102,7 @@ where
     /// # Time Complexity
     ///
     /// *O*(α(*N*)) amortized
-    pub fn size(self, x: usize) -> usize {
+    pub fn size(&self, x: usize) -> usize {
         -self.parent_or_size[self.find(x)].get() as usize
     }
 
