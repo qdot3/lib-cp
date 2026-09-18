@@ -1,129 +1,145 @@
-pub fn hilbert_sort_by_key<T, F>(src: &mut [T], key: F)
-where
-    F: Fn(&T) -> (u32, u32),
-{
-    let max_level = (u32::BITS
-        - src
-            .iter()
-            .map(|v| key(v))
-            .fold(0, |acc, (x, y)| acc | x | y)
-            .leading_zeros())
-    .div_ceil(4) as u8;
-    debug_assert!(max_level <= 8);
+// pub fn hilbert_sort_by_key<T, F>(src: &mut [T], key: F)
+// where
+//     F: Fn(&T) -> (u32, u32),
+// {
+//     let max_level = (u32::BITS
+//         - src
+//             .iter()
+//             .map(|v| key(v))
+//             .fold(0, |acc, (x, y)| acc | x | y)
+//             .leading_zeros())
+//     .div_ceil(4) as u8;
+//     debug_assert!(max_level <= 8);
 
-    if max_level == 0 {
-        return;
+//     if max_level == 0 {
+//         return;
+//     }
+
+//     let mut bucket = Box::new([[0; 256]; 8]);
+//     let mut cursor = [0; 256];
+//     let mut stack = Vec::with_capacity(8);
+
+//     {
+//         let level = max_level - 1;
+//         let dir = 0;
+
+//         stack.push((level, dir, 0_u8));
+//         place_level(
+//             src,
+//             &key,
+//             level,
+//             dir,
+//             &mut bucket[level as usize],
+//             &mut cursor,
+//         );
+//     }
+
+//     while let Some((level, dir, i)) = stack.last_mut() {
+//         // FIXME: use `ref` keyword
+//         let level = &*level;
+//         let dir = &*dir;
+
+//         let start = {
+//             let start = bucket[*level as usize][i.wrapping_sub(1) as usize];
+//             if *i == 0 {
+//                 0
+//             } else {
+//                 start
+//             }
+//         };
+//         let end = bucket[*level as usize][*i as usize];
+
+//         let next_level = level.wrapping_sub(1);
+//         let next_dir = (NEXT_DIR[*i as usize] >> dir * 2) & 3;
+
+//         *i = i.wrapping_add(1);
+//         if *i == 0 {
+//             bucket[*level as usize].fill(0);
+//             stack.pop();
+//         }
+
+//         if end - start > 1 && next_level < 8 {
+//             place_level(
+//                 &mut src[start..end],
+//                 &key,
+//                 next_level,
+//                 next_dir,
+//                 &mut bucket[next_level as usize],
+//                 &mut cursor,
+//             );
+//             stack.push((next_level, next_dir, 0));
+//         }
+//     }
+// }
+
+// fn place_level<T, F>(
+//     src: &mut [T],
+//     key: &F,
+//     level: u8,
+//     dir: Dir,
+//     bucket: &mut [usize; 256],
+//     cursor: &mut [usize; 256],
+// ) where
+//     F: Fn(&T) -> (u32, u32),
+// {
+//     let shift = 4 * level;
+//     let hilbert_order = |v: &T| {
+//         let (x, y) = key(v);
+//         let key = ((x >> shift << 4) | ((y >> shift) & 0x0f)) as u8;
+//         let h = HILBERT_ORDER[(dir & 3) as usize][key as usize];
+//         h
+//     };
+
+//     // count population by hilbert order
+//     src.iter().for_each(|v| {
+//         bucket[hilbert_order(v) as usize] += 1;
+//     });
+
+//     // prefix sum
+//     let mut largest = (bucket[0], 0);
+//     for b in 1..bucket.len() {
+//         largest = std::cmp::max_by_key(largest, (bucket[b], b), |v| v.0);
+
+//         // store end of the block
+//         bucket[b] += bucket[b - 1];
+//     }
+
+//     // place
+//     cursor[0] = 0;
+//     cursor[1..].copy_from_slice(&bucket[..255]);
+//     for b in 0..bucket.len() {
+//         // skip largest block. this block will be sorted at the end
+//         if b == largest.1 {
+//             continue;
+//         }
+
+//         while cursor[b] < bucket[b] {
+//             let h = hilbert_order(&src[cursor[b]]);
+
+//             if h == b as u8 {
+//                 cursor[b] += 1;
+//             } else {
+//                 src.swap(cursor[b], cursor[h as usize]);
+//                 cursor[h as usize] += 1;
+//             }
+//         }
+//     }
+// }
+
+pub fn hilbert_order<const WIDTH: u8>(x: u32, y: u32) -> u64 {
+    let _check = const { assert!(WIDTH <= 32) };
+
+    let mut order = 0;
+    let mut dir = 0;
+    for shift in (0..WIDTH).step_by(4).rev() {
+        let key = (((x >> shift << 4) & 0xf0) | ((y >> shift) & 0x0f)) as u8 as usize;
+        let val = HILBERT_ORDER[dir as usize][key];
+
+        order = (order << 8) | (val as u64);
+        dir = (NEXT_DIR[val as usize] >> (dir * 2)) & 3
     }
 
-    let mut bucket = Box::new([[0; 256]; 8]);
-    let mut cursor = [0; 256];
-    let mut stack = Vec::with_capacity(8);
-
-    {
-        let level = max_level - 1;
-        let dir = 0;
-
-        stack.push((level, dir, 0_u8));
-        place_level(
-            src,
-            &key,
-            level,
-            dir,
-            &mut bucket[level as usize],
-            &mut cursor,
-        );
-    }
-
-    while let Some((level, dir, i)) = stack.last_mut() {
-        // FIXME: use `ref` keyword
-        let level = &*level;
-        let dir = &*dir;
-
-        let start = {
-            let start = bucket[*level as usize][i.wrapping_sub(1) as usize];
-            if *i == 0 {
-                0
-            } else {
-                start
-            }
-        };
-        let end = bucket[*level as usize][*i as usize];
-
-        let next_level = level.wrapping_sub(1);
-        let next_dir = (NEXT_DIR[*i as usize] >> dir * 2) & 3;
-
-        *i = i.wrapping_add(1);
-        if *i == 0 {
-            bucket[*level as usize].fill(0);
-            stack.pop();
-        }
-
-        if end - start > 1 && next_level < 8 {
-            place_level(
-                &mut src[start..end],
-                &key,
-                next_level,
-                next_dir,
-                &mut bucket[next_level as usize],
-                &mut cursor,
-            );
-            stack.push((next_level, next_dir, 0));
-        }
-    }
-}
-
-fn place_level<T, F>(
-    src: &mut [T],
-    key: &F,
-    level: u8,
-    dir: Dir,
-    bucket: &mut [usize; 256],
-    cursor: &mut [usize; 256],
-) where
-    F: Fn(&T) -> (u32, u32),
-{
-    let shift = 4 * level;
-    let hilbert_order = |v: &T| {
-        let (x, y) = key(v);
-        let key = ((x >> shift << 4) | ((y >> shift) & 0x0f)) as u8;
-        let h = HILBERT_ORDER[(dir & 3) as usize][key as usize];
-        h
-    };
-
-    // count population by hilbert order
-    src.iter().for_each(|v| {
-        bucket[hilbert_order(v) as usize] += 1;
-    });
-
-    // prefix sum
-    let mut largest = (bucket[0], 0);
-    for b in 1..bucket.len() {
-        largest = std::cmp::max_by_key(largest, (bucket[b], b), |v| v.0);
-
-        // store end of the block
-        bucket[b] += bucket[b - 1];
-    }
-
-    // place
-    cursor[0] = 0;
-    cursor[1..].copy_from_slice(&bucket[..255]);
-    for b in 0..bucket.len() {
-        // skip largest block. this block will be sorted at the end
-        if b == largest.1 {
-            continue;
-        }
-
-        while cursor[b] < bucket[b] {
-            let h = hilbert_order(&src[cursor[b]]);
-
-            if h == b as u8 {
-                cursor[b] += 1;
-            } else {
-                src.swap(cursor[b], cursor[h as usize]);
-                cursor[h as usize] += 1;
-            }
-        }
-    }
+    order
 }
 
 /// direction from entry point to exit point. `0..4`.
